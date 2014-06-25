@@ -729,14 +729,19 @@ let give_history_2 h bf ancetre g node_list border debug=
     else
       begin
 	Hashtbl.add mark_down node true;
-	if (MyGraph.mem_vertex g node) then
+	let son = MyGraph.succ ancetre node in
+	let rec keep_in_graphe l ing outg= match l with
+	  |p::q -> (if (MyGraph.mem_vertex g p) then (keep_in_graphe q (p::ing) outg) else (keep_in_graphe q ing (p::outg)))
+	  |[] -> (ing,outg)
+	in
+	let son_in,son_out = keep_in_graphe son [] [] in
+	if (son_in <> []) then
 	  begin
-	    node_of_interest := (node) :: !node_of_interest;
-	  end
-	else 
-	  begin
-	    MyGraph.iter_succ deal_with_border ancetre node
-	  end
+	    MyGraph.add_vertex g node;
+	    List.iter (fun x -> MyGraph.add_edge g node x) son_in;
+	    node_of_interest := (node) :: (!node_of_interest);
+	  end;
+	List.iter deal_with_border son_out;
       end
   in
   List.iter (deal_with_bf) (!in_bf);
@@ -1488,7 +1493,7 @@ let main () =
   let hash_fun = (if f_hach then apply_hash_factor 320 2 theta_tbl else hash_magnus 320 2) in
   let size_graphe = 1000 in 
   let prof_max = 800 in 
-  let nb_test = string_of_int (13) in
+  let nb_test = string_of_int (14) in
   (*let g,tete = alea size_graphe prof_max 160 0.5 in*)
   let g = MyParsor.parse "./testdot/foopgl.dot" in
   MyGraph.remove_vertex g "r";
