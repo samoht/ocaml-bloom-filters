@@ -173,3 +173,33 @@ sig
   val parse : string -> MyGraph.t
   val parse_bounding_box_and_clusters : string -> MyGraph.t * string * Graph.Dot.clusters_hash
 end
+
+module type Build = 
+  sig
+    module G : Graph.Sig.G
+    val empty : unit -> G.t
+    val add_vertex : G.t -> G.V.t -> unit
+    val add_edge : G.t -> G.V.t -> G.V.t -> unit
+  end
+
+module type Elem = 
+sig
+  type t
+  val init : int -> unit
+  val next_item : int -> t
+end
+
+module Buildtest : 
+sig
+  module G : Graph.Sig.G with type V.t = string
+  val empty : unit -> G.t
+  val add_vertex : G.t -> string -> unit
+  val add_edge : G.t -> string -> string -> unit
+end
+
+module AleaDag :
+  functor (B : Build) ->
+    functor (L : Elem with type t = B.G.V.t) ->
+      sig
+	val alea : int -> int -> int -> int -> float -> B.G.t * B.G.V.t
+      end

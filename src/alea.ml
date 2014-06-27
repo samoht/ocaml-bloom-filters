@@ -164,6 +164,52 @@ module HashName = struct
       !rep
 end;;
 (* Create a random dag with n nodes of high h and with tag of length t with branching factor p*)
+module type Build = 
+  sig
+    module G : Sig.G
+    val empty : unit -> G.t
+    val add_vertex : G.t -> G.V.t -> unit
+    val add_edge : G.t -> G.V.t -> G.V.t -> unit
+  end
+
+module type Elem = 
+  sig
+    type t
+    val init : int -> unit
+    val next_item : int -> t
+  end
+
+
+
+module AleaDag ( B : Build) (L : Elem with type t = B.G.V.t) =
+  struct
+    let alea n h t seed p =
+      let rep = B.empty () in
+      L.init seed;
+      let tab = Array.make h [] in
+      let u =  L.next_item t in
+      tab.(0) <- [u];
+      B.add_vertex rep u;
+      for i = 1 to (n-1) do
+	let p = L.next_item t in
+	let k = if (i < h) then (i) else (1 + Random.int (h-1)) in
+	tab.(k) <- p::(tab.(k));
+	B.add_vertex rep p
+      done;
+      let to_iter (i: int) (s : B.G.V.t) =
+	let rec to_iter2 l already = match l with
+	  |t::q::r -> if ((Random.float 1.) < p ) then (B.add_edge rep t s ; to_iter2 (q::r) true) else (to_iter2 (q::r) already)
+	  |t::[] -> if (not already) then B.(add_edge rep t s)
+	  |[] -> ()
+	in
+	to_iter2 tab.(i) false
+      in
+      for i = 1 to (h-1) do
+	List.iter (to_iter (i-1)) tab.(i)  
+      done;
+      rep,u
+    ;;
+  end
 
 let alea (n : int) (h : int) (t : int) (p : float)=
   let rep = MyGraph.create () in
@@ -234,7 +280,19 @@ module L = struct
   let edge l = ()
 end
 
-module B = struct 
+module Buildtest = struct
+  module G = MyGraph
+  let empty = MyGraph.create ~size:10
+  let copy = MyGraph.copy
+  let add_vertex a b = MyGraph.add_vertex a b 
+  let add_edge a b c = MyGraph.add_edge a b c 
+  let add_edge_e a b = MyGraph.add_edge_e a b 
+  let remove_vertex a b = MyGraph.remove_vertex a b
+  let remove_edge a b c = MyGraph.remove_edge a b c
+  let remove_edge_e a b = MyGraph.remove_edge_e a b 
+end
+  
+module Buildtool = struct 
   module G = MyGraph
   let empty = MyGraph.create ~size:10
   let copy = MyGraph.copy
@@ -246,7 +304,7 @@ module B = struct
   let remove_edge_e a b = MyGraph.remove_edge_e a b ; a 
 end
 
-module MyParsor = Dot.Parse(B)(L);;
+module MyParsor = Dot.Parse(Buildtool)(L);;
 
 (*
 let value (c : char) = int_of_char c -48;;

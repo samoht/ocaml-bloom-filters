@@ -70,6 +70,7 @@ let build_next_bf a l s =
   for i = 0 to (n-1) do
     rep.(i) <- a.(i) s
   done;
+
   let build_parents_iter p = 
     for i = 0 to (n-1) do
       add (p.(i)) (rep.(i))
@@ -1402,38 +1403,6 @@ let average l =
   done;
   rrep1,rrep2;;
 
-let get_exemple () = 
-  let g = MyGraph.create () in
-  MyGraph.add_vertex g "0000";
-
-  MyGraph.add_vertex g "0001";
-  MyGraph.add_vertex g "0010";
-  MyGraph.add_vertex g "0011";
-  MyGraph.add_vertex g "0100";
-  MyGraph.add_vertex g "0101";
-
-  MyGraph.add_vertex g "1001";
-  MyGraph.add_vertex g "1010";
-  MyGraph.add_vertex g "1011";
-  MyGraph.add_vertex g "1100";
-  MyGraph.add_vertex g "1101";
-
-  MyGraph.add_vertex g "1111";
-
-  MyGraph.add_edge g "0000" "0001";
-  MyGraph.add_edge g "0001" "0010";
-  MyGraph.add_edge g "0010" "0011";
-  MyGraph.add_edge g "0011" "0100";
-  MyGraph.add_edge g "0100" "0101";
-  MyGraph.add_edge g "0101" "1111";
-
-  MyGraph.add_edge g "0000" "1001";
-  MyGraph.add_edge g "1001" "1010";
-  MyGraph.add_edge g "1010" "1011";
-  MyGraph.add_edge g "1011" "1100";
-  MyGraph.add_edge g "1100" "1101";
-  MyGraph.add_edge g "1101" "1111";
-  g,"0000";;
 
 let remove_useless g = 
   let to_iter node = if (node = "r") then (MyGraph.remove_vertex g node) in
