@@ -1,12 +1,14 @@
 module type HashSig =
 sig
-  val h : string array -> string -> unit
+  type t
+  val h : string array -> t -> unit
   val size : int
+  val size_hash : int
 end
   
 module BloomFilter (H : HashSig) =
   struct
-    type t = string
+    type t = H.t
     type u = string array
     let nb_max = 200
     let add_char c1 c2 = 
@@ -101,8 +103,10 @@ module BloomFilter (H : HashSig) =
 
     let build_union l =
       let n = H.size in
-      let rep = Array.make n "" in
-      H.h rep "";
+      let rep = Array.make n (String.make (H.size_hash / 8) (char_of_int 0)) in
+      for i = 0 to (n-1) do
+	rep.(i) <- String.make (H.size_hash / 8) (char_of_int 0)
+      done;
       let build_parents_iter p = 
 	for i = 0 to (n-1) do
 	  add (p.(i)) (rep.(i))

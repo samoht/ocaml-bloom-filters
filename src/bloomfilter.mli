@@ -1,8 +1,10 @@
 module type HashSig =
 sig
-  val h : string array -> string -> unit
+  type t
+  val h : string array -> t -> unit
   val size : int
+  val size_hash : int
 end
   
 module BloomFilter :
-  functor (H : HashSig) -> Mergetools.DataStructure with type t = string with type u = string array
+  functor (H : HashSig) -> Mergetools.DataStructure with type t = H.t with type u = string array

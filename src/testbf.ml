@@ -7,3 +7,7 @@ struct
 end
 
 module Test = Mergetools.MergeTools(Alea.Buildtest)(Datastructset.Set(ToSet));;
+
+module Bf = Bloomfilter.BloomFilter(Hash.Hash_multi);;
+
+

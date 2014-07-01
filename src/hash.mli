@@ -1,5 +1,1 @@
-module Hash_multi :
-sig
-  val h : string array -> string -> unit
-  val size : int
-end
+module Hash_multi : Bloomfilter.HashSig with type t = string

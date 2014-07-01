@@ -1,7 +1,9 @@
-module Hash_multi =
-struct 
-  let size = 20 ;;
-let theta = Array.make 20 0. ;;
+module Hash_multi  =
+struct
+  type t = string
+  let size_hash = 320
+  let size = 20;;
+  let theta = Array.make 20 0. ;;
 
 for i = 0 to 19 do
   theta.(i) <- 0.00001 +. Random.float 0.99999
@@ -103,6 +105,6 @@ let apply_hash_factor size nb_on theta_tbl arr s =
     arr.(i) <- hash_multi (size) theta_tbl.(i) nb_on s
   done;;
 
-let h = apply_hash_factor size 3 theta;;
+let h = apply_hash_factor size_hash 3 theta;;
 
 end
