@@ -1363,7 +1363,7 @@ let stat_bf bf_l : float array * float array =
 
 let participation p rep =
   let n = Array.length p in
-  for i = 0 to (n-1) do 
+  for i = 0 to (n-1) do
     let a,b = rep.(i) in
     rep.(i) <- (a+1,b+.p.(i))
   done;;

@@ -90,7 +90,7 @@ let simule g beg =
 	  incr nb_envoi;
 	  let bf = ref (Hashtbl.find bf_l want_to_merge) in
 	  let border_l_1,border_l_2 = split (Hashtbl.find border_l want_to_merge) [] [] in
-	  let border_l_ref = ref (border_l_2) in
+(*	  let border_l_ref = ref (border_l_2) in*)
 	  let border =  Bf.build_union (border_l_2) in
 	  let g_loc = MyGraph.empty () in
 	  MyGraph.add_vertex g_loc node_par;
