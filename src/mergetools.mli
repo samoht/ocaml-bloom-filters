@@ -17,5 +17,7 @@ sig
   type v = (int * D.u) list
   val add : B.G.V.t list -> v -> v -> B.G.t -> (v * v)
   val get_history : B.G.V.t list -> B.G.t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
+  val iter_graphe_from_high : (B.G.V.t -> unit) -> B.G.t -> B.G.V.t -> unit
+  val unif_graphe : B.G.t -> B.G.t -> unit
 end
      

@@ -163,6 +163,8 @@ module HashName = struct
       add (!rep);
       !rep
 end;;
+
+
 (* Create a random dag with n nodes of high h and with tag of length t with branching factor p*)
 module type Build = 
   sig
@@ -170,6 +172,7 @@ module type Build =
     val empty : unit -> G.t
     val add_vertex : G.t -> G.V.t -> unit
     val add_edge : G.t -> G.V.t -> G.V.t -> unit
+    val copy : G.t -> G.t
   end
 
 module type Elem = 
@@ -179,7 +182,12 @@ module type Elem =
     val next_item : int -> t
   end
 
-
+module StringElem : Elem with type t = string = 
+struct 
+  type t = string
+  let init x = HashName.init ()
+  let next_item l = HashName.new_name l
+end
 
 module AleaDag ( B : Build) (L : Elem with type t = B.G.V.t) =
   struct
@@ -290,6 +298,7 @@ module Buildtest = struct
   let remove_vertex a b = MyGraph.remove_vertex a b
   let remove_edge a b c = MyGraph.remove_edge a b c
   let remove_edge_e a b = MyGraph.remove_edge_e a b 
+  let copy g = MyGraph.copy g
 end
   
 module Buildtool = struct 

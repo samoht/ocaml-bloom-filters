@@ -15,8 +15,14 @@ sig
   type v = (int * D.u) list
   val add : B.G.V.t list -> v -> v -> B.G.t -> (v * v)
   val get_history : B.G.V.t list -> B.G.t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
+  val iter_graphe_from_high : (B.G.V.t -> unit) -> B.G.t -> B.G.V.t -> unit
+  val unif_graphe : B.G.t -> B.G.t -> unit
 end =
   struct
+    let rec remove e l = match l with
+      |p::q -> if (e = p) then q else (p::(remove e q))
+      |[] -> []
+    ;;
     type v = (int * D.u) list
     let build_next_border bf parent_list current_border =
       let rep = ref (current_border) in
@@ -182,4 +188,61 @@ end =
       List.iter (deal_with_bf) (!in_bf);
       List.iter (deal_with_border) (!in_border);
       (g,!node_of_interest)
+    let iter_graphe_from_high f g start =
+      let visited_up = Hashtbl.create 10 in
+      let to_visite = ref [] in
+      let rec go_up node = 
+	if Hashtbl.mem visited_up node then 
+	  ()
+	else
+	  begin
+	    Hashtbl.add visited_up node true;
+	    if (B.G.pred g node = []) then
+	      to_visite := node :: !to_visite
+	    else
+	      (B.G.iter_pred go_up g node)
+	  end
+      in
+      go_up start;
+      let visited_down = Hashtbl.create 10 in
+      let pred = Hashtbl.create 10 in
+      let visite_node node = 
+	if Hashtbl.mem visited_down node then
+	  ()
+	else
+	  begin
+	    Hashtbl.add visited_down node true;
+	    f node;
+	    let deal_with_son son = 
+	      if Hashtbl.mem pred son then
+		begin
+		  let l = remove node (Hashtbl.find pred son) in
+		  if l = [] then (to_visite := son :: !to_visite);
+		  Hashtbl.replace pred son l
+		end
+	      else 
+		begin
+		  let l = remove node (B.G.pred g son) in
+		  if l = [] then (to_visite := son :: !to_visite);
+		  Hashtbl.replace pred son l
+		end
+	    in
+	    B.G.iter_succ deal_with_son g node
+	  end
+      in
+      while (!to_visite <> []) do
+	let p::q = !to_visite in
+	to_visite := q;
+	visite_node p
+      done
+    let unif_graphe g g2 =
+      let forall_vertex elem = 
+	B.add_vertex g elem
+      in
+      let forall_edge deb fin = 
+	B.add_edge g deb fin
+      in
+      B.G.iter_vertex forall_vertex g2;
+      B.G.iter_edges forall_edge g2;;
+    
   end

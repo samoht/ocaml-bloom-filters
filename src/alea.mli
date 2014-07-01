@@ -180,6 +180,7 @@ module type Build =
     val empty : unit -> G.t
     val add_vertex : G.t -> G.V.t -> unit
     val add_edge : G.t -> G.V.t -> G.V.t -> unit
+    val copy : G.t -> G.t
   end
 
 module type Elem = 
@@ -189,12 +190,15 @@ sig
   val next_item : int -> t
 end
 
+module StringElem : Elem with type t = string
+
 module Buildtest : 
 sig
   module G : Graph.Sig.G with type V.t = string
   val empty : unit -> G.t
   val add_vertex : G.t -> string -> unit
   val add_edge : G.t -> string -> string -> unit
+  val copy : G.t -> G.t
 end
 
 module AleaDag :
