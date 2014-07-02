@@ -9,8 +9,7 @@ struct
   let equal = (=)
 end
 
-module Test = Mergetools.MergeTools(Alea.Buildtest)(Datastructset.Set(ToSet));;
-    
+
 let rec remove e l = match l with
   |p::q -> if (e = p) then q else (p::(remove e q))
   |[] -> []
@@ -67,20 +66,25 @@ let simule g beg =
   let nb_graph = ref 0 in
   let dif_cum = ref 0 in
 
+  let state_h = Hashtbl.create 10 in
+
   let bf_l = Hashtbl.create 10 in
   let ancetre = Hashtbl.create 10 in
+  let border_l = Hashtbl.create 10 in
+
   let left_before = Hashtbl.create 10 in
   let tovisite = ref [beg] in
   let visited = Hashtbl.create 10 in
-  let border_l = Hashtbl.create 10 in
   let bf_merge_aux = ref "" in
   Hashtbl.add bf_l "" [];
   Hashtbl.add border_l "" [];
-
+  Hashtbl.add (state_h) "" (Truc.empty_state ());
   let visite node = 
+    let debug = "0000101000101010101001011000100111110000111101110100010000100010011110111111100010110110100101111101000101011001010110100101111010101101001011110111010001000110" = node in
     Printf.printf "Visiting Node %s\n" node;
     let peres = MyGraph.G.pred g node in
     let added_node_l = ref [] in
+    let graph_rep = ref (MyGraph.empty ()) in
     if (peres <> [])  then 
       begin
 	let want_to_merge,to_merge = get_l (Random.int (List.length peres)) peres [] in
@@ -88,11 +92,18 @@ let simule g beg =
 	let glist = ref [] in
 	let deal_with_one_thread node_par =
 	  incr nb_envoi;
-	  let bf = ref (Hashtbl.find bf_l want_to_merge) in
-	  let border_l_1,border_l_2 = split (Hashtbl.find border_l want_to_merge) [] [] in
-(*	  let border_l_ref = ref (border_l_2) in*)
+	  let state = Hashtbl.find state_h want_to_merge in
+	  let bf = ref (state.Truc.bf) in
+	  let border_l_1,border_l_2 = split (state.Truc.border) [] [] in
+	  let border_l_ref = ref (border_l_2) in
 	  let border =  Bf.build_union (border_l_2) in
 	  let g_loc = MyGraph.empty () in
+
+(*	  let bf = ref (Hashtbl.find bf_l want_to_merge) in
+	  let border_l_1,border_l_2 = split (Hashtbl.find border_l want_to_merge) [] [] in
+	  let border_l_ref = ref (border_l_2) in
+	  let border =  Bf.build_union (border_l_2) in
+	  let g_loc = MyGraph.empty () in *)
 	  MyGraph.add_vertex g_loc node_par;
 	  let node_of_interest = ref [node_par] in
 	  while (!node_of_interest <> []) do
@@ -105,7 +116,7 @@ let simule g beg =
 		  match (!border_l_ref) with
 		  |t::r -> 
 		    begin
-		      Truc.get_history (!node_of_interest) (Hashtbl.find ancetre node_par) g_loc p border
+		      Truc.get_history (!node_of_interest) (Hashtbl.find state_h node_par) g_loc p border
 		    end
 		  |[] -> failwith "impossible";
 		in
@@ -125,28 +136,36 @@ let simule g beg =
 	in
 	List.iter (fun x -> Truc.iter_graphe_from_high f (snd x) (fst x)) !glist;
 
-	let graph_sol = MyGraph.copy (Hashtbl.find ancetre want_to_merge) in
+	let graph_sol = MyGraph.copy ((Hashtbl.find state_h want_to_merge).Truc.ancestor) in
 	List.iter (fun x -> Truc.unif_graphe graph_sol (snd x)) !glist;
 	
 	MyGraph.add_vertex graph_sol node;
+	if debug then (Printf.printf "Mark [1]\n";flush stdout);
 	MyGraph.G.iter_pred (fun x -> MyGraph.add_edge graph_sol x node) g node;
-
-	Hashtbl.add ancetre node graph_sol;
+	graph_rep := graph_sol
+(*	Hashtbl.add ancetre node graph_sol;*)
       end
     else
       begin
 	let graph_sol = MyGraph.empty () in
 	MyGraph.add_vertex graph_sol node;
-	Hashtbl.add ancetre node graph_sol;
+	graph_rep := graph_sol
+(*	Hashtbl.add ancetre node graph_sol;*)
       end;
-
+    let state = Hashtbl.find state_h (!bf_merge_aux) in
+(*
     let (pere_bf_l : (int * string array) list) = Hashtbl.find bf_l (!bf_merge_aux) in
     let border_bf_l = Hashtbl.find border_l (!bf_merge_aux) in
+*) 
     added_node_l := (node :: !added_node_l);
     added_node_l := List.rev (!added_node_l);
-    let bf_l_sol,border_l_sol = Truc.add (!added_node_l) (pere_bf_l : (int * string array) list) border_bf_l (Hashtbl.find ancetre node) in
+    let g_sol = !graph_rep in
+    let statenew = Truc.add (!added_node_l) (state) (g_sol) in
+    Hashtbl.add (state_h) node statenew;
+   (*
     Hashtbl.add bf_l node bf_l_sol;
     Hashtbl.add border_l node border_l_sol;
+   *)
     let gere_fils fils = 
       if (Hashtbl.mem left_before fils) then 
 	let a = Hashtbl.find left_before fils in
@@ -178,7 +197,7 @@ let simule g beg =
 	visite p;
       end
   done;
-  bf_l,ancetre, ((float_of_int (!dif_cum)) /. (float_of_int (!nb_graph))),(float_of_int (!nb_envoi_bf) /. float_of_int (!nb_envoi));;
+  state_h, ((float_of_int (!dif_cum)) /. (float_of_int (!nb_graph))),(float_of_int (!nb_envoi_bf) /. float_of_int (!nb_envoi));;
 
 let ancetre g a = 
   let res = MyGraph.empty () in
@@ -239,7 +258,7 @@ let main () =
   let prof_max = 800 in 
   let nb_test = "100" in
   let g,hd = DagGen.alea size_graphe prof_max 160 0 0.5 in
-  let a,b,c,d = simule g hd in
+  let state_h,c,d = simule g hd in
 
 
   Printf.printf "=====Starting to test Ancestors=====\n";
@@ -258,10 +277,11 @@ let main () =
     Printf.printf "[CHECKING ANCESTORS] %d/%d %s\n" (!nb) size_graphe k;
     flush stdout;
     incr nb;
-    let test = egale v (Hashtbl.find b k) in
+    let test = egale v ((Hashtbl.find state_h k).Truc.ancestor) in
     if (not test) then (Printf.printf "[CHECKING FAILED] %s\n" k);
     repbool := ((!repbool) && test) 
   in
+  Hashtbl.iter (test_egal) rep;
   Printf.printf "Test Ancetre : %s\n" (if (!repbool) then "[OK]" else "[FAIL]");
   flush stdout;
       
@@ -277,7 +297,7 @@ let main () =
     flush stdout;
     incr nb1;
     let ancetre = Hashtbl.find rep node in
-    let bf_l = Hashtbl.find a node in    
+    let bf_l = (Hashtbl.find (state_h) node).Truc.bf  in    
     let to_iter_on_others b =
       let is_in_really = MyGraph.G.mem_vertex ancetre b in
       let is_in_bf = is_in_one_of_bf b bf_l 0 in

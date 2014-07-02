@@ -15,7 +15,8 @@ module MergeTools :
     functor (D : DataStructure with type t = B.G.V.t) ->
 sig
   type v = (int * D.u) list
-  type t = {ancestor : B.G.t , bf : v , border : v}
+  type t = {ancestor : B.G.t ; bf : v ; border : v}
+  val empty_state : unit -> t
   (*add nl sB border :
     -g is the graph of ancestors of a node A;
     -bf and border are the bloomfilter list and border list of B : one of the parent of A
@@ -24,13 +25,13 @@ sig
   *)
   val add : B.G.V.t list -> t -> B.G.t -> t
   (*
-    get_history il ancestor g bf border
+    get_history il sA g bf border
     -il is a list of nodes from which we look for nodes in the difference
-    -ancestor is the graph of ancestors of A if A is calling get_history
+    -sA is the global state of A if A is calling get_history
     -g is a graph of nodes we already know in the difference (the newly found nodes will be added to this node)
     -bf and border are the last bloomfilter and border from B, the node trying to merge with A 
   *)
-  val get_history : B.G.V.t list -> B.G.t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
+  val get_history : B.G.V.t list -> t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
   val iter_graphe_from_high : (B.G.V.t -> unit) -> B.G.t -> B.G.V.t -> unit
   val unif_graphe : B.G.t -> B.G.t -> unit
 end

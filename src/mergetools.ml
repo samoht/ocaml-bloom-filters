@@ -9,14 +9,14 @@ sig
   val test_belong : t -> u -> bool
 end
 
-
 module MergeTools (B : Alea.Build) (D : DataStructure with type t = B.G.V.t) :
 sig
 
-  type t = {ancestor : B.G.t , bf : v , border : v}
   type v = (int * D.u) list
-  val add : B.G.V.t list -> v -> v -> B.G.t -> (v * v)
-  val get_history : B.G.V.t list -> B.G.t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
+  type t = {ancestor : B.G.t ; bf : v ; border : v}
+  val empty_state : unit -> t
+  val add : B.G.V.t list -> t -> B.G.t -> t
+  val get_history : B.G.V.t list -> t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
   val iter_graphe_from_high : (B.G.V.t -> unit) -> B.G.t -> B.G.V.t -> unit
   val unif_graphe : B.G.t -> B.G.t -> unit
 end =
@@ -26,6 +26,8 @@ end =
       |[] -> []
     ;;
     type v = (int * D.u) list
+    type t = {ancestor : B.G.t ; bf : v ; border : v}
+    let empty_state () = {ancestor = B.empty (); bf = [] ; border = []}
     let build_next_border bf parent_list current_border =
       let rep = ref (current_border) in
       let nb_added = ref 0 in
@@ -40,9 +42,9 @@ end =
       in
       List.iter one_elem parent_list;
       !nb_added,!rep;;
-    let add nodel pere_bf_l border_bf_l g = 
-      let rep = ref pere_bf_l in
-      let repf = ref border_bf_l in
+    let add nodel (state : t) g = 
+      let rep = ref (state.bf) in
+      let repf = ref (state.border) in
       let rec add_one l = match l with
 	|p::q ->
 	  begin
@@ -81,8 +83,10 @@ end =
 	|[] -> ()
       in
       add_one nodel;
-      !rep,!repf
-    let get_history node_list ancetre g bf border =
+      {ancestor = g; bf = !rep; border = !repf}
+
+    let get_history node_list state g bf border =
+      let ancetre = state.ancestor in
       let node_of_interest = ref [] in
       let in_border = ref [] in
       let in_bf = ref [] in
