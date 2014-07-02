@@ -17,19 +17,10 @@ sig
   type v = (int * D.u) list
   type t = {ancestor : B.G.t ; bf : v ; border : v}
   val empty_state : unit -> t
-  (*add nl sB border :
-    -g is the graph of ancestors of a node A;
-    -bf and border are the bloomfilter list and border list of B : one of the parent of A
-    -nl is the list of nodes in the difference between g and the graph of the ancestors of B
-    then the function outputs the global state of A
+  (**[add nl sB g] is the function that outputs the global state of A where [nl] is the list of nodes in the difference between g and the graph of the ancestors of B and [sB] is the state of B and [g] is the graph of ancestors of a node A
   *)
   val add : B.G.V.t list -> t -> B.G.t -> t
-  (*
-    get_history il sA g bf border
-    -il is a list of nodes from which we look for nodes in the difference
-    -sA is the global state of A if A is calling get_history
-    -g is a graph of nodes we already know in the difference (the newly found nodes will be added to this node)
-    -bf and border are the last bloomfilter and border from B, the node trying to merge with A 
+  (**[get_history il sA g bf border] is a function called by A that computes a part of the difference between B and A where [il] is a list of nodes from which we look for nodes in the difference and [sA] is the global state of A and [g] is a graph of nodes we already know in the difference (the newly found nodes will be added to this node) and [bf] is a bloomfilter containing nodes of B we are trying to find in the ancestors of A and [border] is the border of the bloomfilter
   *)
   val get_history : B.G.V.t list -> t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
   val iter_graphe_from_high : (B.G.V.t -> unit) -> B.G.t -> B.G.V.t -> unit
