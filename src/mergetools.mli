@@ -16,6 +16,7 @@ module MergeTools :
 sig
   type v = (int * D.u) list
   type t = {ancestor : B.G.t ; bf : v ; border : v}
+  type retour = Some of (B.G.t) | None
   val empty_state : unit -> t
   (**[add nl sB g] is the function that outputs the global state of A where [nl] is the list of nodes in the difference between g and the graph of the ancestors of B and [sB] is the state of B and [g] is the graph of ancestors of a node A
   *)
@@ -25,5 +26,8 @@ sig
   val get_history : B.G.V.t list -> t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
   val iter_graphe_from_high : (B.G.V.t -> unit) -> B.G.t -> B.G.V.t -> unit
   val unif_graphe : B.G.t -> B.G.t -> unit
+  val increase_high :  t ->  B.G.V.t list -> B.G.V.t -> t
+  val increase_width : t -> ( D.u -> D.u -> B.G.V.t -> retour) -> B.G.V.t -> t
+
 end
      

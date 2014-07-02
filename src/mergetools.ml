@@ -14,19 +14,26 @@ sig
 
   type v = (int * D.u) list
   type t = {ancestor : B.G.t ; bf : v ; border : v}
+  type retour = Some of (B.G.t) | None
   val empty_state : unit -> t
   val add : B.G.V.t list -> t -> B.G.t -> t
   val get_history : B.G.V.t list -> t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
   val iter_graphe_from_high : (B.G.V.t -> unit) -> B.G.t -> B.G.V.t -> unit
   val unif_graphe : B.G.t -> B.G.t -> unit
+  val increase_high :  t ->  B.G.V.t list -> B.G.V.t -> t
+  val increase_width : t -> ( D.u -> D.u -> B.G.V.t -> retour) -> B.G.V.t -> t
 end =
   struct
+
+
+    type v = (int * D.u) list
+    type t = {ancestor : B.G.t ; bf : v ; border : v}
+    type retour = Some of (B.G.t) | None    
+    
     let rec remove e l = match l with
       |p::q -> if (e = p) then q else (p::(remove e q))
       |[] -> []
-    ;;
-    type v = (int * D.u) list
-    type t = {ancestor : B.G.t ; bf : v ; border : v}
+    ;;    
     let empty_state () = {ancestor = B.empty (); bf = [] ; border = []}
     let build_next_border bf parent_list current_border =
       let rep = ref (current_border) in
@@ -250,5 +257,51 @@ end =
       in
       B.G.iter_vertex forall_vertex g2;
       B.G.iter_edges forall_edge g2;;
-    
+
+    let rec split l a1 a2 = match l with
+      |(a,b)::q ->  split q (a::a1) (b::a2)
+      |[] -> (a1,a2)
+    ;;
+    let increase_high (state_init : t) (former_heads : B.G.V.t list) (head : B.G.V.t) =
+      let g = B.copy (state_init.ancestor) in
+      B.add_vertex g head;
+      let deal_with_heads one = 
+	B.add_edge g one head
+      in
+      List.iter deal_with_heads former_heads;
+      let state_new = add ([head]) (state_init) g in
+      state_new
+
+    let increase_width (state_init : t) (f : D.u -> D.u -> B.G.V.t -> retour) (head : B.G.V.t) =
+      let bf = ref (state_init.bf) in
+      let border_l_1,border_l_2 = split (state_init.border) [] [] in
+      let border_l_ref = ref (border_l_2) in
+      let border =  D.build_union (border_l_2) in
+      let keep_going = ref true in
+      let graph_rep = ref (B.empty ()) in
+      while (!keep_going) do
+	match (!bf) with
+	|(a,p)::q -> 
+	  begin
+	    bf := q;
+	    match (!border_l_ref) with
+	    |t::r -> 
+	      begin
+		match (f p border head) with
+		|Some(g) -> graph_rep := g; keep_going := false
+		|None -> ()
+	      end
+	    |[] -> failwith "impossible";
+	  end
+	|[] -> failwith "no more bloom filters"
+      done;
+      let added_node_l = ref [] in
+      let g node_in = 
+	added_node_l := node_in :: (!added_node_l)
+      in
+      let sol = !graph_rep in
+      iter_graphe_from_high g (sol) head;
+      unif_graphe sol (state_init.ancestor);
+      let statenew = add (!added_node_l) (state_init) (sol) in
+      statenew;;
   end

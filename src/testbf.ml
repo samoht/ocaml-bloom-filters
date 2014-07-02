@@ -20,10 +20,6 @@ let rec get_l i l accu= match l with
   |[] -> failwith "i too big"
 ;;
 
-let rec split l a1 a2 = match l with
-  |(a,b)::q ->  split q (a::a1) (b::a2)
-  |[] -> (a1,a2)
-;;
 let compute_hist_diff g e1 e2 = 
   let ae1 = Hashtbl.create 10 in
   let rec visitee1 node = 
@@ -56,7 +52,88 @@ let compute_hist_diff g e1 e2 =
   monte_rep e2;
   !rep;;
 
+module Database =
+struct
+  let known = (let rep = Hashtbl.create 10 in Hashtbl.add rep "" (Truc.empty_state ()); rep)
+  let il = ref []
+  let gloc = ref (MyGraph.empty ())
+  let reinit () = il := []; gloc := (MyGraph.empty ())
+  let add k v = Hashtbl.add known k v
+  let f bf bd hd = 
+    if (!il = []) then
+      (il := [hd]);
+    let state = Hashtbl.find known hd in
+    let a,b = Truc.get_history (!il) state (!gloc) bf bd in
+    if ( b = []) then (reinit (); Truc.Some(a)) else ( il := b ; gloc := a ; Truc.None)
+  let fstate node = Hashtbl.find known node
+  let astate node state = Hashtbl.add known node state
+end
 
+
+let rec split l a1 a2 = match l with
+  |(a,b)::q ->  split q (a::a1) (b::a2)
+  |[] -> (a1,a2)
+;;
+
+
+let simule2 g beg =
+  let left_before = Hashtbl.create 10 in
+  let tovisite = ref [beg] in
+  let visited = Hashtbl.create 10 in
+  let bf_merge_aux = ref "" in
+
+  let visite node = 
+    let peres = MyGraph.G.pred g node in
+    if (peres <> [])  then 
+      begin
+	let p::q = peres in
+	let state_fin = ref (Database.fstate p) in
+	let rec width l = match l with
+	  |p::q -> 
+	    begin
+	      state_fin := Truc.increase_width (!state_fin) Database.f p;
+	      width q
+	    end
+	  |[] -> state_fin := Truc.increase_high (!state_fin) peres node
+	in
+	width q;
+	Database.astate node (!state_fin)
+      end
+    else
+      begin
+	let state_fin = Truc.increase_high (Truc.empty_state ()) [] node in
+	Database.astate node (state_fin)
+      end;
+    let gere_fils fils = 
+      if (Hashtbl.mem left_before fils) then 
+	let a = Hashtbl.find left_before fils in
+	let l = remove node a in
+	(*Printf.printf "[R]%s -> %d\n" fils (List.length l);*)
+	Hashtbl.replace left_before fils (l);
+	if (l = []) then
+	  tovisite := fils :: (!tovisite);
+      else 
+	let l = remove node (MyGraph.G.pred g fils) in
+	Hashtbl.add left_before fils (l);
+	(*Printf.printf "[A]%s -> %d\n" fils (List.length l);*)
+	if (l = []) then
+	  tovisite := fils :: (!tovisite);
+    in
+    MyGraph.G.iter_succ (gere_fils) g node;
+    
+  in
+  while (!tovisite <> []) do
+    let p::q = !tovisite in
+    tovisite := q;
+    
+    if (Hashtbl.mem visited p) then 
+      ()
+    else
+      begin
+	Hashtbl.add visited p true;
+	visite p;
+      end
+  done;;
 
 let simule g beg =
 
@@ -254,13 +331,12 @@ let max_l l =
 
 
 let main () = 
-  let size_graphe = 1000 in 
-  let prof_max = 800 in 
+  let size_graphe = 500 in 
+  let prof_max = 400 in 
   let nb_test = "100" in
   let g,hd = DagGen.alea size_graphe prof_max 160 0 0.5 in
-  let state_h,c,d = simule g hd in
-
-
+  let () = simule2 g hd in
+  let state_h = Database.known in
   Printf.printf "=====Starting to test Ancestors=====\n";
   let rep = Hashtbl.create 10 in
   
