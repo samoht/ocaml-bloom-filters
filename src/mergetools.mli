@@ -16,13 +16,13 @@ module MergeTools :
 sig
   type v = (int * D.u) list
   type t = {ancestor : B.G.t , bf : v , border : v}
-  (*add nl bf border g :
+  (*add nl sB border :
     -g is the graph of ancestors of a node A;
     -bf and border are the bloomfilter list and border list of B : one of the parent of A
     -nl is the list of nodes in the difference between g and the graph of the ancestors of B
-    then the function outputs the bloomfilter list and border list of A
+    then the function outputs the global state of A
   *)
-  val add : B.G.V.t list -> v -> v -> B.G.t -> (v * v)
+  val add : B.G.V.t list -> t -> B.G.t -> t
   (*
     get_history il ancestor g bf border
     -il is a list of nodes from which we look for nodes in the difference

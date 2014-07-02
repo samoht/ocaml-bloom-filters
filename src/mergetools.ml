@@ -12,6 +12,8 @@ end
 
 module MergeTools (B : Alea.Build) (D : DataStructure with type t = B.G.V.t) :
 sig
+
+  type t = {ancestor : B.G.t , bf : v , border : v}
   type v = (int * D.u) list
   val add : B.G.V.t list -> v -> v -> B.G.t -> (v * v)
   val get_history : B.G.V.t list -> B.G.t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
