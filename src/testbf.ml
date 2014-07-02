@@ -55,16 +55,15 @@ let compute_hist_diff g e1 e2 =
 module Database =
 struct
   let known = (let rep = Hashtbl.create 10 in Hashtbl.add rep "" (Truc.empty_state ()); rep)
-  let il = ref []
-  let gloc = ref (MyGraph.empty ())
-  let reinit () = il := []; gloc := (MyGraph.empty ())
   let add k v = Hashtbl.add known k v
-  let f bf bd hd = 
-    if (!il = []) then
-      (il := [hd]);
-    let state = Hashtbl.find known hd in
-    let a,b = Truc.get_history (!il) state (!gloc) bf bd in
-    if ( b = []) then (reinit (); Truc.Some(a)) else ( il := b ; gloc := a ; Truc.None)
+  let f bf bd l=
+    let rec ancl l accu = match l with
+      |p::q -> ancl q (((Hashtbl.find known p).ancestor)::accu)
+      |[] -> (List.rev accu)
+    in
+    let anl = ancl l [] in
+    let a,b = Truc.get_history_multi l anl bf bd in
+    b,a
   let fstate node = Hashtbl.find known node
   let astate node state = Hashtbl.add known node state
 end
@@ -331,8 +330,8 @@ let max_l l =
 
 
 let main () = 
-  let size_graphe = 500 in 
-  let prof_max = 400 in 
+  let size_graphe = 600 in 
+  let prof_max = 500 in 
   let nb_test = "100" in
   let g,hd = DagGen.alea size_graphe prof_max 160 0 0.5 in
   let () = simule2 g hd in
