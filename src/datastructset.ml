@@ -1,4 +1,4 @@
-module type Setable = 
+module type SetSig = 
 sig
   type t
   val equal : t -> t -> bool

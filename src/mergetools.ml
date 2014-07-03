@@ -1,129 +1,113 @@
-module type DataStructure =
+module type DataSig =
 sig
   type t
   type u
   val nb_max : int
-  val build_next : u list -> t -> u
-  val build_next_l : u list -> t list -> u
-  val build_union : u list -> u
-  val test_belong : t -> u -> bool
+  val merge : u list -> t list -> u
+  val mem : t -> u -> bool
 end
 
-module MergeTools (B : Alea.Build) (D : DataStructure with type t = B.G.V.t) :
-sig
-
+module Make (B : Graph.Sig.I) (D : DataSig with type t = B.V.t)  =
+struct
   type v = (int * D.u) list
-  type t = {ancestor : B.G.t ; bf : v ; border : v}
-  type retour = Some of (B.G.t) | None
-  val empty_state : unit -> t
-  val add : B.G.V.t list -> t -> B.G.t -> t
-  val get_history : B.G.V.t list -> t -> B.G.t -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
-  val get_history_multi : B.G.V.t list -> B.G.t list -> D.u -> D.u -> (B.G.t * (B.G.V.t list))
-  val iter_graphe_from_high : (B.G.V.t -> unit) -> B.G.t -> B.G.V.t -> unit
-  val unif_graphe : B.G.t -> B.G.t -> unit
-  val increase_high :  t ->  B.G.V.t list -> B.G.V.t -> t
-  val increase_width : t -> ( D.u -> D.u -> B.G.V.t list -> (B.G.V.t list * B.G.t)) -> B.G.V.t -> t
-end =
-  struct
-
-
-    type v = (int * D.u) list
-    type t = {ancestor : B.G.t ; bf : v ; border : v}
-    type retour = Some of (B.G.t) | None    
-    
-    let rec remove e l = match l with
-      |p::q -> if (e = p) then q else (p::(remove e q))
-      |[] -> []
-    ;;    
-    let empty_state () = {ancestor = B.empty (); bf = [] ; border = []}
-    let build_next_border bf parent_list current_border =
-      let rep = ref (current_border) in
-      let nb_added = ref 0 in
-      let one_elem node = 
-	if (D.test_belong node bf) then 
-	  ()
-	else
-	  begin
-	    rep := D.build_next [!rep] node;
-	    nb_added := !nb_added + 1
-	  end
-      in
-      List.iter one_elem parent_list;
-      !nb_added,!rep;;
-    let add nodel (state : t) g = 
-      let rep = ref (state.bf) in
-      let repf = ref (state.border) in
-      let rec add_one l = match l with
-	|p::q ->
-	  begin
-	    match (!rep) with
-	    |(nb,bf)::r -> 
-	      begin
-		if (nb+1 > D.nb_max) then
-		  begin
-		    let a = D.build_next [] p in
-		    rep := (1,a) :: (!rep);
-		    let b = D.build_next_l [] (B.G.pred g p) in
-		    repf := (1,b) :: (!repf);
-		    add_one q;
-		  end
-		else
-		  begin
-		    let a = D.build_next [bf] p in
-		    rep := (nb+1,a) :: r;
-		    begin
-		      match (!repf) with
-		      |[] -> failwith "empty border with non empty bf"
-		      |(nb_border,border)::queue -> 
-			begin
-			  let n,b= build_next_border a (B.G.pred g p) (border) in
-			  repf := (nb_border +n, b)::queue
-			end;
-		    end;
-		    add_one q;
-		  end
-	      end
-	    |[] -> 
-	      begin
-		rep := [1,D.build_next [] p]; repf := [1,D.build_next[] p]; add_one q
-	      end
-	  end
-	|[] -> ()
-      in
-      add_one nodel;
-      {ancestor = g; bf = !rep; border = !repf}
-    let get_history_multi node_list ancestor_list bf border = 
-      let g = B.empty () in
-
-      let node_of_interest = ref [] in
-      let in_border = ref [] in
-      let in_bf = ref [] in
-      let explored = Hashtbl.create 10 in
-      let explored_down = Hashtbl.create 10 in
+  type t = {ancestor : B.t ; bf : v ; border : v}
+  type retour = Some of (B.t) | None    
       
-      let rec explore_one boul node ancetre= 
-	if boul then
-	  begin
-	    if (Hashtbl.mem explored node) then
-	      ()
+  let rec remove e l = match l with
+    |p::q -> if (e = p) then q else (p::(remove e q))
+    |[] -> []
+  ;;    
+  let empty_state () = {ancestor = B.create (); bf = [] ; border = []}
+  let get_ancestor t = t.ancestor
+  let get_bf t = t.bf
+  let build_next_border bf parent_list current_border =
+    let rep = ref (current_border) in
+    let nb_added = ref 0 in
+    let one_elem node = 
+      if (D.mem node bf) then 
+	()
+      else
+	begin
+	  rep := D.merge [!rep] [node];
+	  nb_added := !nb_added + 1
+	end
+    in
+    List.iter one_elem parent_list;
+    !nb_added,!rep;;
+  let add nodel (state : t) g = 
+    let rep = ref (state.bf) in
+    let repf = ref (state.border) in
+    let rec add_one l = match l with
+      |p::q ->
+	begin
+	  match (!rep) with
+	  |(nb,bf)::r -> 
+	    begin
+	      if (nb+1 > D.nb_max) then
+		begin
+		  let a = D.merge [] [p] in
+		  rep := (1,a) :: (!rep);
+		  let b = D.merge [] (B.pred g p) in
+		  repf := (1,b) :: (!repf);
+		  add_one q;
+		end
+	      else
+		begin
+		  let a = D.merge [bf] [p] in
+		  rep := (nb+1,a) :: r;
+		  begin
+		    match (!repf) with
+		    |[] -> failwith "empty border with non empty bf"
+		    |(nb_border,border)::queue -> 
+		      begin
+			let n,b= build_next_border a (B.pred g p) (border) in
+			repf := (nb_border +n, b)::queue
+		      end;
+		  end;
+		  add_one q;
+		end
+	      end
+	  |[] -> 
+	    begin
+	      rep := [1,D.merge [] [p]]; repf := [1,D.merge [] [p]]; add_one q
+	    end
+	end
+      |[] -> ()
+    in
+    add_one nodel;
+    {ancestor = g; bf = !rep; border = !repf}
+  let next_ring node_list ancestor_list bf border = 
+    let g = B.create () in
+
+    let node_of_interest = ref [] in
+    let in_border = ref [] in
+    let in_bf = ref [] in
+    let explored = Hashtbl.create 10 in
+    let explored_down = Hashtbl.create 10 in
+    
+    let rec explore_one boul node ancetre= 
+      if boul then
+	begin
+	  if (Hashtbl.mem explored node) then
+	    ()
 	    else 
 	      begin
 		Hashtbl.add explored node true;
-		let is_in_bf = D.test_belong node bf in
+		let is_in_bf = D.mem node bf in
 		if (is_in_bf) then 
 		  begin
 		    found_in_bf node ancetre;
 		  end
 		else
 		  begin
-		    let is_in_border = D.test_belong node border in
+		    let is_in_border = D.mem node border in
 		    if (is_in_border) then 
 		      begin
 			found_in_border node ancetre
 		      end
 	            else 
 		      begin
-			B.G.iter_pred (fun x -> explore_one false x ancetre) (ancetre) node;
+			B.iter_pred (fun x -> explore_one false x ancetre) (ancetre) node;
 		      end
 		  end
 	      end
@@ -134,26 +118,26 @@ end =
 	      ()
 	    else
 	      begin
-		if (B.G.mem_vertex g node) then 
+		if (B.mem_vertex g node) then 
 		  ()
 		else
 		  begin
 		    Hashtbl.add explored node true;
-		    let is_in_bf = D.test_belong node bf in
+		    let is_in_bf = D.mem node bf in
 		    if (is_in_bf) then 
 		      begin
 			found_in_bf node ancetre
 		      end
 		    else
 		      begin
-			let is_in_border = D.test_belong node border in
+			let is_in_border = D.mem node border in
 			if (is_in_border) then 
 			  begin
 			    found_in_border node ancetre
 			  end
 			else 
 			  begin
-			    B.G.iter_pred (fun x -> explore_one false x ancetre) (ancetre) node;
+			    B.iter_pred (fun x -> explore_one false x ancetre) (ancetre) node;
 			  end
 		      end
 		  end
@@ -179,8 +163,8 @@ end =
 	    let add_edges_with_son son = 
 	      B.add_edge g node son
 	    in
-	    B.G.iter_succ add_edges_with_son (ancetre) node;
-	    B.G.iter_succ (fun x -> deal_with_bf x ancetre) (ancetre) node
+	    B.iter_succ add_edges_with_son (ancetre) node;
+	    B.iter_succ (fun x -> deal_with_bf x ancetre) (ancetre) node
 	  end
       in
       let mark_down = Hashtbl.create 10 in
@@ -190,9 +174,9 @@ end =
 	else
 	  begin
 	    Hashtbl.add mark_down node true;
-	    let son = B.G.succ ancetre node in
+	    let son = B.succ ancetre node in
 	    let rec keep_in_graphe l ing outg= match l with
-	      |p::q -> (if (B.G.mem_vertex g p) then (keep_in_graphe q (p::ing) outg) else (keep_in_graphe q ing (p::outg)))
+	      |p::q -> (if (B.mem_vertex g p) then (keep_in_graphe q (p::ing) outg) else (keep_in_graphe q ing (p::outg)))
 	      |[] -> (ing,outg)
 	    in
 	    let son_in,son_out = keep_in_graphe son [] [] in
@@ -225,21 +209,21 @@ end =
 	    else 
 	      begin
 		Hashtbl.add explored node true;
-		let is_in_bf = D.test_belong node bf in
+		let is_in_bf = D.mem node bf in
 		if (is_in_bf) then 
 		  begin
 		    found_in_bf node;
 		  end
 		else
 		  begin
-		    let is_in_border = D.test_belong node border in
+		    let is_in_border = D.mem node border in
 		    if (is_in_border) then 
 		      begin
 			found_in_border node
 		      end
 	            else 
 		      begin
-			B.G.iter_pred (explore_one false) (ancetre) node;
+			B.iter_pred (explore_one false) (ancetre) node;
 		      end
 		  end
 	      end
@@ -250,26 +234,26 @@ end =
 	      ()
 	    else
 	      begin
-		if (B.G.mem_vertex g node) then 
+		if (B.mem_vertex g node) then 
 		  ()
 		else
 		  begin
 		    Hashtbl.add explored node true;
-		    let is_in_bf = D.test_belong node bf in
+		    let is_in_bf = D.mem node bf in
 		    if (is_in_bf) then 
 		      begin
 			found_in_bf node
 		      end
 		    else
 		      begin
-			let is_in_border = D.test_belong node border in
+			let is_in_border = D.mem node border in
 			if (is_in_border) then 
 			  begin
 			    found_in_border node
 			  end
 			else 
 			  begin
-			    B.G.iter_pred (explore_one false) (ancetre) node;
+			    B.iter_pred (explore_one false) (ancetre) node;
 			  end
 		      end
 		  end
@@ -289,8 +273,8 @@ end =
 	    let add_edges_with_son son = 
 	      B.add_edge g node son
 	    in
-	    B.G.iter_succ add_edges_with_son (ancetre) node;
-	    B.G.iter_succ deal_with_bf (ancetre) node
+	    B.iter_succ add_edges_with_son (ancetre) node;
+	    B.iter_succ deal_with_bf (ancetre) node
 	  end
       in
       let mark_down = Hashtbl.create 10 in
@@ -300,9 +284,9 @@ end =
 	else
 	  begin
 	    Hashtbl.add mark_down node true;
-	    let son = B.G.succ ancetre node in
+	    let son = B.succ ancetre node in
 	    let rec keep_in_graphe l ing outg= match l with
-	      |p::q -> (if (B.G.mem_vertex g p) then (keep_in_graphe q (p::ing) outg) else (keep_in_graphe q ing (p::outg)))
+	      |p::q -> (if (B.mem_vertex g p) then (keep_in_graphe q (p::ing) outg) else (keep_in_graphe q ing (p::outg)))
 	      |[] -> (ing,outg)
 	    in
 	    let son_in,son_out = keep_in_graphe son [] [] in
@@ -327,10 +311,10 @@ end =
 	else
 	  begin
 	    Hashtbl.add visited_up node true;
-	    if (B.G.pred g node = []) then
+	    if (B.pred g node = []) then
 	      to_visite := node :: !to_visite
 	    else
-	      (B.G.iter_pred go_up g node)
+	      (B.iter_pred go_up g node)
 	  end
       in
       go_up start;
@@ -352,12 +336,12 @@ end =
 		end
 	      else 
 		begin
-		  let l = remove node (B.G.pred g son) in
+		  let l = remove node (B.pred g son) in
 		  if l = [] then (to_visite := son :: !to_visite);
 		  Hashtbl.replace pred son l
 		end
 	    in
-	    B.G.iter_succ deal_with_son g node
+	    B.iter_succ deal_with_son g node
 	  end
       in
       while (!to_visite <> []) do
@@ -372,14 +356,14 @@ end =
       let forall_edge deb fin = 
 	B.add_edge g deb fin
       in
-      B.G.iter_vertex forall_vertex g2;
-      B.G.iter_edges forall_edge g2;;
+      B.iter_vertex forall_vertex g2;
+      B.iter_edges forall_edge g2;;
 
     let rec split l a1 a2 = match l with
       |(a,b)::q ->  split q (a::a1) (b::a2)
       |[] -> (a1,a2)
     ;;
-    let increase_high (state_init : t) (former_heads : B.G.V.t list) (head : B.G.V.t) =
+    let increase_high (state_init : t) (former_heads : B.V.t list) (head : B.V.t) =
       let g = B.copy (state_init.ancestor) in
       B.add_vertex g head;
       let deal_with_heads one = 
@@ -389,13 +373,13 @@ end =
       let state_new = add ([head]) (state_init) g in
       state_new
 
-    let increase_width (state_init : t) (f : D.u -> D.u -> B.G.V.t list -> (B.G.V.t list * B.G.t)) (head : B.G.V.t) =
+    let increase_width (state_init : t) (f : D.u -> D.u -> B.V.t list -> (B.V.t list * B.t)) (head : B.V.t) =
       let bf = ref (state_init.bf) in
       let border_l_1,border_l_2 = split (state_init.border) [] [] in
       let border_l_ref = ref (border_l_2) in
-      let border =  D.build_union (border_l_2) in
+      let border =  D.merge (border_l_2) [] in
       let keep_going = ref true in
-      let graph_rep = B.empty () in
+      let graph_rep = B.create () in
       let interest = ref [head] in
       while (!keep_going) do
 	match (!bf) with

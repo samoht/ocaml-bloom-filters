@@ -1,12 +1,4 @@
-module type HashSig =
-sig
-  type t
-  val h : string array -> t -> unit
-  val size : int
-  val size_hash : int
-end
-  
-module BloomFilter (H : HashSig) =
+module Make (H : Hash.HashSig with type u = string array) =
   struct
     type t = H.t
     type u = string array
@@ -89,7 +81,7 @@ module BloomFilter (H : HashSig) =
 
     let build_next l s =
       let n = H.size in
-      let rep = Array.make n "" in
+      let rep = H.create () in
       H.h rep s;
       let build_parents_iter p = 
 	for i = 0 to (n-1) do
@@ -103,7 +95,7 @@ module BloomFilter (H : HashSig) =
 
     let build_union l =
       let n = H.size in
-      let rep = Array.make n (String.make (H.size_hash / 8) (char_of_int 0)) in
+      let rep = H.create () in
       for i = 0 to (n-1) do
 	rep.(i) <- String.make (H.size_hash / 8) (char_of_int 0)
       done;
@@ -116,7 +108,7 @@ module BloomFilter (H : HashSig) =
       if (rep.(0) = "") then (Printf.printf "UNION NUL alors que %d\n" (List.length l));
       flush stdout;
       rep
-    let test_belong s b = 
+    let mem s b = 
       let n = Array.length b in
       let rep = Array.make n "" in
       flush stdout;
@@ -127,7 +119,7 @@ module BloomFilter (H : HashSig) =
 	incr i
       done;
       !i = n;;
-    let build_next_l l1 l2 = 
+    let merge l1 l2 = 
       match l2 with
       |p::q -> 
 	begin

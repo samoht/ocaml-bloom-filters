@@ -1,8 +1,20 @@
+module type HashSig =
+sig
+  type u
+  type t
+  val size : int
+  val size_hash : int
+  val create : unit -> u
+  val h : u -> t -> unit
+end
+
 module Hash_multi  =
 struct
+  type u = string array
   type t = string
-  let size_hash = 320
   let size = 20;;
+
+  let size_hash = 320
   let theta = Array.make 20 0. ;;
 
 for i = 0 to 19 do
@@ -106,5 +118,10 @@ let apply_hash_factor size nb_on theta_tbl arr s =
   done;;
 
 let h = apply_hash_factor size_hash 3 theta;;
-
+let create () =  
+  let rep = Array.make size (String.make (size_hash / 8) (char_of_int 0)) in
+  for i = 0 to (size-1) do
+    rep.(i) <- String.make (size_hash / 8) (char_of_int 0)
+  done;
+  rep
 end

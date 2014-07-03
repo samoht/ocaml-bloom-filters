@@ -1,12 +1,6 @@
 (*#load "graph.cma";;*)
+(****** TOOLBOX
 
-open Format;;
-open Graph;;
-open Pack;;
-open Imperative;;
-open Digraph;;
-
-let truc : int  = 3;;
 let is_char_in_string_n m c s =
   let n = String.length s in
   let i = ref 0 in
@@ -75,8 +69,11 @@ let binaire_to_hexa s =
     rep.[i] <- int_to_hexa_c (nb_of_bin s (4*i) 4)
   done;
   rep;;
-  
 
+
+*)
+
+(*
 module Comparable : Sig.COMPARABLE with type t = string = struct
   type t = string
   let compare = Pervasives.compare
@@ -114,7 +111,7 @@ struct
 end;;
 
 module MyDot = Graphviz.Dot(ToDot);;
-
+*)
 module HashName = struct
   type tree = Node of bool * tree * tree | Nil of bool
   let float = Random.float
@@ -166,14 +163,6 @@ end;;
 
 
 (* Create a random dag with n nodes of high h and with tag of length t with branching factor p*)
-module type Build = 
-  sig
-    module G : Sig.G
-    val empty : unit -> G.t
-    val add_vertex : G.t -> G.V.t -> unit
-    val add_edge : G.t -> G.V.t -> G.V.t -> unit
-    val copy : G.t -> G.t
-  end
 
 module type Elem = 
   sig
@@ -189,10 +178,10 @@ struct
   let next_item l = HashName.new_name l
 end
 
-module AleaDag ( B : Build) (L : Elem with type t = B.G.V.t) =
+module Make (B : Graph.Sig.I) (L : Elem with type t = B.V.t) =
   struct
     let alea n h t seed p =
-      let rep = B.empty () in
+      let rep = B.create () in
       L.init seed;
       let tab = Array.make h [] in
       let u =  L.next_item t in
@@ -204,7 +193,7 @@ module AleaDag ( B : Build) (L : Elem with type t = B.G.V.t) =
 	tab.(k) <- p::(tab.(k));
 	B.add_vertex rep p
       done;
-      let to_iter (i: int) (s : B.G.V.t) =
+      let to_iter (i: int) (s : B.V.t) =
 	let rec to_iter2 l already = match l with
 	  |t::q::r -> if ((Random.float 1.) < p ) then (B.add_edge rep t s ; to_iter2 (q::r) true) else (to_iter2 (q::r) already)
 	  |t::[] -> if (not already) then B.(add_edge rep t s)
@@ -219,33 +208,7 @@ module AleaDag ( B : Build) (L : Elem with type t = B.G.V.t) =
     ;;
   end
 
-let alea (n : int) (h : int) (t : int) (p : float)=
-  let rep = MyGraph.create () in
-  HashName.init ();
-  let tab = Array.make h [] in
-  let u =  HashName.new_name t in
-  tab.(0) <- [u];
-  MyGraph.add_vertex rep u;
-  for i = 1 to (n-1) do
-    let p = HashName.new_name t in
-    let k = if (i < h) then (i) else (1 + Random.int (h-1)) in
-    tab.(k) <- p::(tab.(k));
-      MyGraph.add_vertex rep p
-  done;
-  let to_iter (i: int) (s : string) =
-    let rec to_iter2 l already = match l with
-      |t::q::r -> if ((Random.float 1.) < p ) then (MyGraph.add_edge rep t s ; to_iter2 (q::r) true) else (to_iter2 (q::r) already)
-      |t::[] -> if (not already) then MyGraph.(add_edge rep t s)
-      |[] -> ()
-    in
-    to_iter2 tab.(i) false
-  in
-  for i = 1 to (h-1) do
-    List.iter (to_iter (i-1)) tab.(i)  
-  done;
-  rep,u
-;;
-
+(*
 module L = struct
 
   let node (a : Dot_ast.node_id) (b : Dot_ast.attr list) =
@@ -313,8 +276,8 @@ module Buildtool = struct
   let remove_edge_e a b = MyGraph.remove_edge_e a b ; a 
 end
 
-module MyParsor = Dot.Parse(Buildtool)(L);;
-
+module MyParsor = Dot.Parse(MyGraph)(L);;
+*)
 (*
 let value (c : char) = int_of_char c -48;;
 (*add s1 to s2 (the result is stock in s2)*)

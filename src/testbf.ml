@@ -1,7 +1,22 @@
-module MyGraph = Alea.Buildtest
-module Bf = Bloomfilter.BloomFilter(Hash.Hash_multi);;
-module DagGen = Alea.AleaDag(MyGraph)(Alea.StringElem)
-module Truc = Mergetools.MergeTools(MyGraph)(Bf)
+module Comparable : Graph.Sig.COMPARABLE with type t = string = struct
+  type t = string
+  let compare = Pervasives.compare
+  let hash a = 
+    let n = String.length a in
+    let modu = ref 1 in
+    let rep = ref 0 in
+    for i = 0 to (n-1) do
+      if (a.[i] = '1') then (rep := !rep + !modu);
+      modu := 2* !modu
+    done;
+    !rep
+  let equal = (=)
+end;;
+
+module MyGraph = Graph.Imperative.Digraph.ConcreteBidirectional(Comparable);;
+module Bf = Bloomfilter.Make(Hash.Hash_multi);;
+module DagGen = Alea.Make(MyGraph)(Alea.StringElem)
+module Truc = Mergetools.Make(MyGraph)(Bf)
 
 module ToSet = 
 struct
@@ -28,7 +43,7 @@ let compute_hist_diff g e1 e2 =
     else 
       begin
 	Hashtbl.add ae1 node true;
-	MyGraph.G.iter_pred (visitee1) g node 
+	MyGraph.iter_pred (visitee1) g node 
       end
   in
   visitee1 e1;
@@ -45,7 +60,7 @@ let compute_hist_diff g e1 e2 =
 	else
 	  begin
 	    incr rep;
-	    MyGraph.G.iter_pred monte_rep g node
+	    MyGraph.iter_pred monte_rep g node
 	  end
       end
   in
@@ -58,11 +73,11 @@ struct
   let add k v = Hashtbl.add known k v
   let f bf bd l=
     let rec ancl l accu = match l with
-      |p::q -> ancl q (((Hashtbl.find known p).ancestor)::accu)
+      |p::q -> ancl q ((Truc.get_ancestor (Hashtbl.find known p))::accu)
       |[] -> (List.rev accu)
     in
     let anl = ancl l [] in
-    let a,b = Truc.bnext_ring l anl bf bd in
+    let a,b = Truc.next_ring l anl bf bd in
     b,a
   let fstate node = Hashtbl.find known node
   let astate node state = Hashtbl.add known node state
@@ -82,7 +97,7 @@ let simule2 g beg =
   let bf_merge_aux = ref "" in
 
   let visite node = 
-    let peres = MyGraph.G.pred g node in
+    let peres = MyGraph.pred g node in
     if (peres <> [])  then 
       begin
 	let p::q = peres in
@@ -112,13 +127,13 @@ let simule2 g beg =
 	if (l = []) then
 	  tovisite := fils :: (!tovisite);
       else 
-	let l = remove node (MyGraph.G.pred g fils) in
+	let l = remove node (MyGraph.pred g fils) in
 	Hashtbl.add left_before fils (l);
 	(*Printf.printf "[A]%s -> %d\n" fils (List.length l);*)
 	if (l = []) then
 	  tovisite := fils :: (!tovisite);
     in
-    MyGraph.G.iter_succ (gere_fils) g node;
+    MyGraph.iter_succ (gere_fils) g node;
     
   in
   while (!tovisite <> []) do
@@ -133,7 +148,7 @@ let simule2 g beg =
 	visite p;
       end
   done;;
-
+(*
 let simule g beg =
 
 (* STAT SUR LES ENVOIS*)
@@ -158,7 +173,7 @@ let simule g beg =
   let visite node = 
     let debug = "0000101000101010101001011000100111110000111101110100010000100010011110111111100010110110100101111101000101011001010110100101111010101101001011110111010001000110" = node in
     Printf.printf "Visiting Node %s\n" node;
-    let peres = MyGraph.G.pred g node in
+    let peres = MyGraph.pred g node in
     let added_node_l = ref [] in
     let graph_rep = ref (MyGraph.empty ()) in
     if (peres <> [])  then 
@@ -201,7 +216,7 @@ let simule g beg =
 	    |[] -> failwith "no more bloom filters"
 	  done;
 	  let size_opt = compute_hist_diff g want_to_merge node_par in
-	  let size_real = MyGraph.G.nb_vertex g_loc in
+	  let size_real = MyGraph.nb_vertex g_loc in
 	  incr nb_graph;
 	  dif_cum := abs (size_opt - size_real) + !dif_cum;
 	  glist := (node_par,g_loc) :: !glist
@@ -217,7 +232,7 @@ let simule g beg =
 	
 	MyGraph.add_vertex graph_sol node;
 	if debug then (Printf.printf "Mark [1]\n";flush stdout);
-	MyGraph.G.iter_pred (fun x -> MyGraph.add_edge graph_sol x node) g node;
+	MyGraph.iter_pred (fun x -> MyGraph.add_edge graph_sol x node) g node;
 	graph_rep := graph_sol
 (*	Hashtbl.add ancetre node graph_sol;*)
       end
@@ -252,13 +267,13 @@ let simule g beg =
 	  tovisite := fils :: (!tovisite);
 	
       else 
-	let l = remove node (MyGraph.G.pred g fils) in
+	let l = remove node (MyGraph.pred g fils) in
 	Hashtbl.add left_before fils (l);
 	(*Printf.printf "[A]%s -> %d\n" fils (List.length l);*)
 	if (l = []) then
 	  tovisite := fils :: (!tovisite);
     in
-    MyGraph.G.iter_succ (gere_fils) g node;
+    MyGraph.iter_succ (gere_fils) g node;
     
   in
   while (!tovisite <> []) do
@@ -274,9 +289,9 @@ let simule g beg =
       end
   done;
   state_h, ((float_of_int (!dif_cum)) /. (float_of_int (!nb_graph))),(float_of_int (!nb_envoi_bf) /. float_of_int (!nb_envoi));;
-
+*)
 let ancetre g a = 
-  let res = MyGraph.empty () in
+  let res = MyGraph.create () in
   let already_visited = Hashtbl.create 10 in
   let nbvi = ref 0 in
   let rec visite node =
@@ -291,8 +306,8 @@ let ancetre g a =
 	let add_pere pere = 
 	  MyGraph.add_edge res pere node;
 	in
-	MyGraph.G.iter_pred add_pere g node;
-	MyGraph.G.iter_pred visite g node
+	MyGraph.iter_pred add_pere g node;
+	MyGraph.iter_pred visite g node
 	  
       end
   in
@@ -302,18 +317,18 @@ let ancetre g a =
 let inclus g1 g2 = 
   let rep = ref true in
   let iter_vertex node = 
-    if (not (MyGraph.G.mem_vertex g2 node)) then (rep := false)
+    if (not (MyGraph.mem_vertex g2 node)) then (rep := false)
   in
   let iter_edge a b = 
-    if (not (MyGraph.G.mem_edge g2 a b)) then (rep := false)
+    if (not (MyGraph.mem_edge g2 a b)) then (rep := false)
   in
-  MyGraph.G.iter_vertex iter_vertex g1;
-  MyGraph.G.iter_edges iter_edge g1;
+  MyGraph.iter_vertex iter_vertex g1;
+  MyGraph.iter_edges iter_edge g1;
   !rep
 ;;
 
 let rec is_in_one_of_bf node bf_l i = match bf_l with
-  |p::q -> if (Bf.test_belong node (snd p)) then (i) else (is_in_one_of_bf node q (i+1))
+  |p::q -> if (Bf.mem node (snd p)) then (i) else (is_in_one_of_bf node q (i+1))
   |[] -> (-1)
 ;;
 
@@ -328,7 +343,6 @@ let max_l l =
   aux l;
   !rep;;
 
-
 let main () = 
   let size_graphe = 600 in 
   let prof_max = 500 in 
@@ -336,7 +350,7 @@ let main () =
   let g,hd = DagGen.alea size_graphe prof_max 160 0 0.5 in
   let () = simule2 g hd in
   let state_h = Database.known in
-  Printf.printf "=====Starting to test Ancestors=====\n";
+  Printf.printf "=====Starting to test Acestors=====\n";
   let rep = Hashtbl.create 10 in
   
   let nb = ref 0 in
@@ -345,14 +359,14 @@ let main () =
     incr nb;
     Hashtbl.add rep a (ancetre g a) 
   in
-  MyGraph.G.iter_vertex iter_on_graph g;
+  MyGraph.iter_vertex iter_on_graph g;
   nb := 0;
   let repbool = ref true in
   let test_egal k v = 
     Printf.printf "[CHECKING ANCESTORS] %d/%d %s\n" (!nb) size_graphe k;
     flush stdout;
     incr nb;
-    let test = egale v ((Hashtbl.find state_h k).Truc.ancestor) in
+    let test = egale v (Truc.get_ancestor (Hashtbl.find state_h k)) in
     if (not test) then (Printf.printf "[CHECKING FAILED] %s\n" k);
     repbool := ((!repbool) && test) 
   in
@@ -372,9 +386,9 @@ let main () =
     flush stdout;
     incr nb1;
     let ancetre = Hashtbl.find rep node in
-    let bf_l = (Hashtbl.find (state_h) node).Truc.bf  in    
+    let bf_l = Truc.get_bf (Hashtbl.find (state_h) node) in
     let to_iter_on_others b =
-      let is_in_really = MyGraph.G.mem_vertex ancetre b in
+      let is_in_really = MyGraph.mem_vertex ancetre b in
       let is_in_bf = is_in_one_of_bf b bf_l 0 in
       if (is_in_bf == -1) then 
 	begin 
@@ -395,9 +409,9 @@ let main () =
 	end
       ;
     in
-    MyGraph.G.iter_vertex (to_iter_on_others) g;
+    MyGraph.iter_vertex (to_iter_on_others) g;
   in
-  MyGraph.G.iter_vertex (to_iter_test_bf) g;
+  MyGraph.iter_vertex (to_iter_test_bf) g;
   let tot = float_of_int (!nbfp + !nbfn + !nbgood) in
   let ffp = float_of_int (!nbfp) in
   let ffn = float_of_int (!nbfn) in
