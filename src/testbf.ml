@@ -62,7 +62,7 @@ struct
       |[] -> (List.rev accu)
     in
     let anl = ancl l [] in
-    let a,b = Truc.get_history_multi l anl bf bd in
+    let a,b = Truc.bnext_ring l anl bf bd in
     b,a
   let fstate node = Hashtbl.find known node
   let astate node state = Hashtbl.add known node state
