@@ -5,6 +5,7 @@ sig
   val size : int
   val size_hash : int
   val create : unit -> u
+  val print_compte : unit -> unit
   val h : u -> t -> unit
 end
 
@@ -98,7 +99,7 @@ let hash_multi size theta nb_on s =
       flush stdout;
       let cur = ref (!seed) in
       (*Printf.printf "first : %d ; seed : %d\n" (!first) (!seed);*)
-      for i = 0 to nb_on do
+      for i = 0 to (nb_on-1) do
 	rep.(!cur) <- true;
 	cur := (!cur + !first) mod size
       done;
@@ -116,8 +117,9 @@ let apply_hash_factor size nb_on theta_tbl arr s =
   for i = 0 to (n-1) do
     arr.(i) <- hash_multi (size) theta_tbl.(i) nb_on s
   done;;
-
-let h = apply_hash_factor size_hash 3 theta;;
+let print_compte () = 
+    ();;
+let h = apply_hash_factor size_hash 1 theta;;
 let create () =  
   let rep = Array.make size (String.make (size_hash / 8) (char_of_int 0)) in
   for i = 0 to (size-1) do
@@ -125,3 +127,91 @@ let create () =
   done;
   rep
 end
+
+module Hash_magnus = 
+struct
+  type u = string array
+  type t = string
+  let size = 20
+  let size_hash = 320
+  let create () = 
+    let rep = Array.make size (String.make (size_hash / 8) (char_of_int 0)) in
+    for i = 0 to (size-1) do
+      rep.(i) <- String.make (size_hash / 8) (char_of_int 0)
+    done;
+    rep
+
+      
+  let string_to_binaire_mod s i l m =
+    let compt =ref 1 in
+    let rep = ref 0 in
+    for j = i to (i+l-1) do
+      if (s.[j] = '1') then (rep := (!rep + !compt) mod (max_int /100));
+      compt := (2 * !compt) mod (max_int /100);
+    done;
+    !rep;;
+  
+  let a_to_c a i =
+    let n = Array.length a in
+    let rep =ref 0 in
+    let compt = ref 1 in
+    for j = 0 to 7 do
+      if (i+j < n && a.(i+j)) then (rep := !rep + !compt);
+      compt := !compt * 2
+    done;
+    char_of_int (!rep);;
+  
+  let a_to_s a = 
+    let n = Array.length a in
+    let m = n/8 in
+    let rep = String.make m ' ' in
+    for i = 0 to (m-1) do 
+      rep.[i] <- a_to_c a (i*8)
+    done;
+    rep;;
+  let tot = ref 0 
+  let compte = Array.make (size_hash) 0
+  let already_added = Hashtbl.create 10
+  let print_compte () = 
+    Printf.printf "[PRINTING REPART]\n";
+    flush stdout;
+    
+    let cout = open_out "rescompte" in
+    for i = 0 to (size_hash -1) do
+      Printf.fprintf cout "%d %d\n" i (compte.(i))
+    done;
+    close_out cout
+  let hash_mag size nb_on arr s=
+    let trace = not (Hashtbl.mem already_added s) in
+    if (trace) then (Hashtbl.add already_added s true);
+    let m = String.length s in
+    let n = Array.length arr in
+    let a = string_to_binaire_mod s 0 (m/2) (size) in
+    let b = string_to_binaire_mod s (m/2) (m/2) (size) in
+(*
+    Printf.printf "%s\n" s;
+    Printf.printf "a : %d --- b : %d\n" a b;
+*)  
+    let aux = Array.make n ([||]) in
+    let compt = ref 0 in
+    for i = 0 to (n-1) do
+      aux.(i) <- Array.make size false;
+    done;
+    for j = 0 to (nb_on -1 ) do
+      for i = 0 to (n-1) do
+	let next = (a + (!compt) * b) mod size in
+	if trace then
+	  begin
+	    compte.(next) <- compte.(next) +1;
+	    incr tot;
+	  end;
+	aux.(i).(next) <- true;
+	incr compt
+      done
+    done;
+    for i = 0 to (n-1) do
+      arr.(i) <- a_to_s (aux.(i));
+    done;;
+  let h arr s = hash_mag size_hash 1 arr s
+end
+

@@ -1,6 +1,12 @@
 (** The signature of the element that can be used as nodes of the Dag
     generated
 *)
+module HashName :
+sig
+  val init : unit -> unit
+  val new_name : int -> string
+end
+
 module type Elem = 
 sig
   type t

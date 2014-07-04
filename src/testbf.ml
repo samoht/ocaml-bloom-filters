@@ -14,7 +14,9 @@ module Comparable : Graph.Sig.COMPARABLE with type t = string = struct
 end;;
 
 module MyGraph = Graph.Imperative.Digraph.ConcreteBidirectional(Comparable);;
-module Bf = Bloomfilter.Make(Hash.Hash_multi);;
+module Bf = Bloomfilter.Make(Hash.Hash_magnus);;
+module Bf2 = Bloomfilter.Make(Hash.Hash_multi);;
+
 module DagGen = Alea.Make(MyGraph)(Alea.StringElem)
 module Truc = Mergetools.Make(MyGraph)(Bf)
 
@@ -344,11 +346,13 @@ let max_l l =
   !rep;;
 
 let main () = 
-  let size_graphe = 600 in 
-  let prof_max = 500 in 
+  let size_graphe = 10000 in 
+  let prof_max = 8000 in 
   let nb_test = "100" in
   let g,hd = DagGen.alea size_graphe prof_max 160 0 0.5 in
   let () = simule2 g hd in
+  Hash.Hash_magnus.print_compte ();
+  
   let state_h = Database.known in
   Printf.printf "=====Starting to test Acestors=====\n";
   let rep = Hashtbl.create 10 in
@@ -432,4 +436,123 @@ let main () =
     end
 ;;
 
-main();;
+
+let binaire_char c = 
+  let aux = String.make 8 '0' in
+  let r = ref (int_of_char c) in
+  for i = 7 downto 0 do
+    let a = (!r) mod 2 in
+    aux.[i] <- char_of_int (48 + a);
+    r := !r /2;
+  done;
+  aux;;
+let binaire_string_p s = 
+  let rep = ref "" in
+  for i = 0 to (String.length (s) -1) do
+    rep := !rep ^"|"^ (binaire_char s.[i])
+  done;
+  !rep;;
+
+let binaire_string s = 
+  let rep = ref "" in
+  for i = 0 to (String.length (s) -1) do
+    rep := !rep ^ (binaire_char s.[i])
+  done;
+  !rep;;
+
+
+
+  let string_to_binaire_mod s i l m =
+    let compt =ref 1 in
+    let rep = ref 0 in
+    for j = i to (i+l-1) do
+      if (s.[j] = '1') then (rep := (!rep + !compt) mod (max_int /100));
+      compt := (2 * !compt) mod (max_int /100);
+    done;
+    !rep;;
+
+let get_a_b s size = 
+  let m = String.length s in
+  let a = string_to_binaire_mod s 0 (m/2) (size) in
+  let b = string_to_binaire_mod s (m/2) (m/2) (size) in
+  a,b;;
+
+
+let main2 () =
+  
+  Alea.HashName.init ();
+  let remplis s = 
+    let n = Array.length s in
+    let m = 8 * (String.length s.(0)) in
+    let rep = ref 0 in
+    for i = 0 to (n-1) do
+      let saux = binaire_string (s.(i)) in
+      for j = 0 to (m-1) do
+	if (saux.[j] = '1') then
+	  incr rep
+      done;
+    done;
+    (float_of_int (!rep))/.(float_of_int (n*m))
+  in
+  let store = ref (Hash.Hash_magnus.create ()) in
+  let cout = open_out "./debug/hmag" in
+  for i = 0 to 200 do
+    let m = Alea.HashName.new_name 160 in
+    store := (Bf.merge [!store] [m]);
+    Printf.fprintf cout "%d %f\n" i (remplis (!store))
+  done;
+  store := (Hash.Hash_magnus.create ());
+  let cout2 = open_out "./debug/hmult" in
+  for i = 0 to 200 do
+    let m = Alea.HashName.new_name 160 in
+    store := (Bf2.merge [!store] [m]);
+    Printf.fprintf cout2 "%d %f\n" i (remplis (!store))
+  done;
+  close_out cout2;
+  close_out cout;
+  let print_store s = 
+    Printf.printf "=====STORE=====\n";
+    let n = Array.length s in
+    let m = 8 * (String.length s.(0)) in
+    let rep = ref 0 in
+    for i = 0 to (n-1) do
+      let saux = binaire_string (s.(i)) in
+      Printf.printf "%s\n" saux;
+    done;
+    
+    (float_of_int (!rep))/.(float_of_int (n*m))
+  in
+  let storemag = ref (Hash.Hash_magnus.create ()) in
+  let storemul = ref (Hash.Hash_magnus.create ()) in
+  for i = 0 to 200 do
+    let m = Alea.HashName.new_name 160 in
+
+(*
+    Printf.printf "%s\n" m;
+    let a,b = get_a_b m 320 in
+    Printf.printf "a : %d --- b : %d\n" a b;
+*)
+    storemag := (Bf.merge [!storemag] [m]);
+    (*print_store (!storemag);*)
+    storemul := (Bf2.merge [!storemul] [m]);
+  done;
+  let nbfailmag = ref 0 in
+  let nbfailmul = ref 0 in
+  let nbtest = 10000 in
+  Printf.printf "\n";
+  for i = 0 to nbtest do
+    let m = Alea.HashName.new_name 160 in
+    if (Bf.mem m (!storemag)) then (
+      incr nbfailmag
+    );
+(*   Printf.printf "%s\n" m;incr nbfailmag;
+      let a,b = get_a_b m 320 in
+      Printf.printf "a : %d --- b : %d\n" a b
+    );*)
+    if (Bf2.mem m (!storemul)) then incr nbfailmul;
+  done;
+  let resmag = float_of_int (!nbfailmag) /. (float_of_int nbtest) in
+  let resmul = float_of_int (!nbfailmul) /. (float_of_int nbtest) in
+  Printf.printf "MAG : %f --- MUL : %f\n" resmag resmul
+;;
+main2();;
