@@ -1,4 +1,4 @@
-\documentclass[a4paper,10pt]{article}
+\documentclass[a4paper,10pt]{report}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage{fontenc}
@@ -12,6 +12,7 @@
 \usepackage{amsthm}
 \usepackage{amsmath}
 \usepackage{amssymb}
+
 \usepackage{mathrsfs}
 \providecommand{\SetAlgoLined}{\SetLine}
 \providecommand{\DontPrintSemicolon}{\dontprintsemicolon}
@@ -25,6 +26,7 @@
 \theoremstyle{definition}
 \usepackage{tikz}
 \usetikzlibrary{arrows}
+\usetikzlibrary{chains,fit,shapes}
 \usepackage{fullpage}
 \definecolor{turquoise}{RGB}{255,127,0}
 \tikzset{
@@ -69,9 +71,28 @@
     arn_ts/.style = {treenode, rectangle, pink, draw=turquoise, 
     minimum width=1.5em, minimum height=1.5em, very thick},
     }% arbre rouge noir, noeud rouge}
+\input{caml.tex}
 \begin{document}
 \maketitle
-\section{Algorithm}
+\begin{lstlisting}
+
+\end{lstlisting}
+
+\chapter{Introduction and scientific context}
+\chapter{Research subject}
+\section{Introduction to the problem}
+\input{pb.tex}
+\section{Introduction to Bloomfilters}
+\input{bf.tex}
+\chapter{Results}
+\section{Min Computing}
+\section{Hash Functions}
+\input{hash.tex}
+\section{Main idea}
+\chapter{Conclusion and bibliography}
+%   \input{biblio.tex}
+\chapter{Appendix}
+%   \input{algo.tex}
 \begin{algorithm}[H]
   \SetAlgoLined
   \caption{Finding some of the ancestors of $Alice$ not known by $Bob$}
@@ -114,7 +135,7 @@
     }
     {
       \texttt{visited\_already} = \texttt{node} $\cup$ \texttt{visited}\;
-      \texttt{in\_bf\_already} = \texttt{in\_bf}\;
+      \texttt{in\_bf\_already} = \texttt{in\_bf}\;				
       \texttt{in\_border\_already} = \texttt{in\_border}\;
       \For{\texttt{pere} $\in$ \pred{\texttt{Ancestor},\texttt{node}}}{
       \If{\texttt{pere} $\notin$ \texttt{explored}}
@@ -123,7 +144,7 @@
       }
       }
       \KwRet{(\texttt{visited\_already},\texttt{in\_bf\_already},\texttt{in\_border\_already})}\;
-    }
+    }	
   }
 }
 

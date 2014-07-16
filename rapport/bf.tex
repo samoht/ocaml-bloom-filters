@@ -1,0 +1,127 @@
+A Bloom filter is a space-efficient probabilistic Data structure that was conceived in 1970 by Burton Howard Bloom. This data structure is particularly efficient for adding an element or testing wether an element is in a set or not. This efficiency is at the cost of having some false positive but no false negative in the membership test. Here we will present the Bloom filters as they were used during my internship, however a lot of different variations have been used on bloomfilters. Let us consider a set $S' = \{x_0,\cdots,x_{n-1}\} \subset S$, we assume moreover that we have $k$ hash functions $\{h_0,\cdots,h_{k-1}\}$ from $S$ to $\{0,\cdots,m-1\}$ and a matrix $T$ of $m$ bits initially to zero. To store $S$ in our table, we change the table : $\forall i \in \{0,\cdots,n-1\},\ \forall j \in \{0,\cdots,k-1\},\ T(j)(h_j(x_i)) = 1$. To test the membership of $x$ in the Bloom filter we check wether $\forall i \in \{0,\cdots,n-1\},\ \forall j \in \{0,\cdots,k-1\},\ T(j)(h_j(x)) = 1$. This test can however raise false positive.
+\begin{figure}[h]
+\begin{tikzpicture}
+\tikzstyle{every path}=[very thick]
+
+\edef\sizehash{0.7cm}
+\tikzstyle{tmtape}=[draw,minimum size=\sizehash]
+
+\begin{scope}[start chain=2 going right,node distance= 0.5cm]
+    \node [on chain=2,tmtape,draw = none] {$S'=\{$};
+    \node [on chain = 2,tmtape,draw = none] (x0) {\textcolor{blue}{$x_0$}};
+    \node [on chain = 2,tmtape,draw = none] (x1) {\textcolor{green}{$x_1$}};
+    \node [on chain = 2,tmtape,draw = none] (x2) {\textcolor{red}{$x_2$}};
+    \node [on chain=2,tmtape,draw = none] {$\}$};
+\end{scope}
+
+\begin{scope}[shift={(-5cm,-2cm)},start chain=1 going right,node distance=-0.15mm]
+    \node [on chain=1,tmtape,draw = none] {$T_0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n0) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n1) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n2) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+\end{scope}
+
+\begin{scope}[shift={(-5cm,-4cm)},start chain=1 going right,node distance=-0.15mm]
+\node [on chain=1,tmtape,draw = none] {$T_1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n3) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n4) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+\end{scope}
+\begin{scope}[shift={(-5cm,-6cm)},start chain=1 going right,node distance=-0.15mm]
+\node [on chain=1,tmtape,draw = none] {$T_2$};
+    \node [on chain=1,tmtape] (n5) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n6) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n7) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+\end{scope}
+\begin{scope}[shift={(2cm,-8cm)},start chain=1 going right,node distance=-0.15mm]
+\node [on chain=1,tmtape,draw = none] (x) {$x$};
+\end{scope}
+
+\draw[->,blue,thick] (x0.south) to[out=270,in=90] node[midway,above] {$h_0$} (n0.north);
+\draw[->,blue,thick] (x0.south) to[out=270,in=90] node[midway,above] {$h_1$} (n3.north);
+\draw[->,blue,thick] (x0.south) to[out=270,in=90] node[midway,above] {$h_2$} (n7.north);
+\draw[->,green,thick] (x1.south) to[out=270,in=90] node[midway,above] {$h_0$} (n1.north);
+\draw[->,green,thick] (x1.south) to[out=270,in=90] node[midway,above] {$h_1$} (n3.north);
+\draw[->,green,thick] (x1.south) to[out=270,in=90] node[midway,above] {$h_2$} (n5.north);
+\draw[->,red,thick] (x2.south) to[out=270,in=90] node[midway,above] {$h_0$} (n2.north);
+\draw[->,red,thick] (x2.south) to[out=270,in=90] node[midway,above] {$h_1$} (n4.north);
+\draw[->,red,thick] (x2.south) to[out=270,in=90] node[midway,above] {$h_2$} (n6.north);
+
+
+\draw[->,magenta,thick] (x.north) to[out=90,in=270] node[midway,above] {$h_0$} (n2.south);
+\draw[->,magenta,thick] (x.north) to[out=90,in=270] node[midway,above] {$h_1$} (n3.south);
+\draw[->,magenta,thick] (x.north) to[out=90,in=270] node[midway,above] {$h_2$} (n6.south);
+\end{tikzpicture}
+\caption{Inserting and testing the membership in a Bloom Filter}
+\end{figure}
+\paragraph{}
+\begin{proposition}
+ Under the assumption that the set $\mathcal H$ is a set of size $k$ independant identically distributed hash functions ranging in $\{0,\cdots,m-1\}$, a table $T$ such as described before and a set $S'\subset S$  of size $n$ of elements inserted in $T$, then the probability $\mathbb{P}$ of having a false positive while testing $x \in S'$ is :
+ \[
+  \mathbb{P}=\left ( 1 - \left ( 1 - \frac{1}{m} \right )^n \right )^k
+ \]
+\end{proposition}
+\begin{proof}
+With the same notation than in the proposition :
+ \begin{align*}
+  \mathbb{P} &= \mathbb{P}(\forall j \in \{0,\cdots,k-1\}, T(j)(h_j(x)) = 1)\\
+    &= \left ( \mathbb{P}(T(0)(h_0(x)) = 1) \right )^k\\
+    &= \left ( \sum_{i=0}^{m-1} \mathbb{P}(T(0)(i) = 1)\mathbb{P}(h_0(x) = i)\right )^k\\
+    &= \left ( \sum_{i=0}^{m-1} \mathbb{P}(T(0)(0) = 1)\frac{1}{m}\right )^k\\
+    &= \left ( 1- \mathbb{P}(T(0)(0) = 0)\right )^k\\
+    &= \left ( 1- \mathbb{P}(\forall p \in \{0,\cdots,n-1\} h_0(p) \neq 0 )\right )^k\\
+    &= \left ( 1- \left ( \frac{m-1}{m} \right )^n \right )^k\\
+ \end{align*}
+\end{proof}
+

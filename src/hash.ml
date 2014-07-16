@@ -8,7 +8,6 @@ sig
   val print_compte : unit -> unit
   val h : u -> t -> unit
 end
-
 module Hash_multi  =
 struct
   type u = string array

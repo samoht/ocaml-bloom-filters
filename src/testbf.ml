@@ -555,4 +555,47 @@ let main2 () =
   let resmul = float_of_int (!nbfailmul) /. (float_of_int nbtest) in
   Printf.printf "MAG : %f --- MUL : %f\n" resmag resmul
 ;;
-main2();;
+(*main2();;*)
+
+let prob m n k = 
+  (1. -. (1. -. 1./.m) ** n) ** k;;
+
+let main3 () =
+  let cout = open_out "bf_res" in
+  let placed = Hashtbl.create 10 in
+  let storemul = ref (Hash.Hash_magnus.create ()) in
+  let offset = 100 in
+  let predo () = 
+    for i = 0 to (offset -1) do
+      let m = Alea.HashName.new_name 160 in
+      Hashtbl.add placed (m) true;
+      storemul := (Bf.merge [!storemul] [m]);
+    done;
+  in
+  predo ();
+  for i = 1 to 50 do
+    for j = 0 to 9 do
+      let m = Alea.HashName.new_name 160 in
+      Hashtbl.add placed m true;
+      storemul := (Bf.merge [!storemul] [m]);
+    done;
+
+    let nbfailmul = ref 0 in
+    let nbtest = 100000 in
+    Alea.HashName.init ();
+    for i = 0 to nbtest do
+      let m = ref (Alea.HashName.new_name 160) in
+      let keep = ref (Hashtbl.mem placed (!m)) in
+      while (!keep) do
+	m := Alea.HashName.new_name 160;
+	keep := Hashtbl.mem placed (!m);
+      done;
+      if (Bf.mem (!m) (!storemul)) then incr nbfailmul;
+    done;
+    let resmul = float_of_int (!nbfailmul) /. (float_of_int nbtest) in
+    Printf.fprintf cout "%d %.5e %.5e\n" (offset + i * 10) resmul (prob (float_of_int 320) (float_of_int (offset + i*10)) (float_of_int 20));
+    Printf.printf "%d %.5e %.5e\n" (offset + i * 10) resmul (prob (float_of_int 320) (float_of_int (offset + i*10)) (float_of_int 20))
+  done;
+  close_out cout;;
+
+main3 ();;
