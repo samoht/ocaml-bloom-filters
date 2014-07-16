@@ -198,7 +198,7 @@ c \rightarrow b
 \forall d\ ,
 c \rightarrow d \Rightarrow \left ( d \nrightarrow a \vee d \nrightarrow b \right )
 \right )
-\}$. This set can be of any size, however \ref{fig:31} underlines what having two biggest common ancestors mean in term of merging. 
+\}$ see \ref{fig:22}. This set can be of any size, however \ref{fig:31} underlines what having two biggest common ancestors mean in term of merging. 
 \paragraph{} Finding the biggest common ancestor(s) is an important problem when two processes want to merge, therefore it is interesting to find a way to discover quickly and without exchanging too many informations between two processes what are the biggest common ancestors of two nodes. For this purpose we label each of the states with a vector of integers of size $n$, $n$ being the total number of processes exchanging information. $\delta_i$ denotes the vector having zeros everywhere except a 1 at the $i$-th position. We build the label of the states in the "$\rightarrow$" order:
 \begin{enumerate}
  \item If a state $a$ is a commit state on a process $P_i$ and as no predecessor for the $\prec_i$ relation then $a$ is labeled with $\delta_i$
@@ -206,7 +206,7 @@ c \rightarrow d \Rightarrow \left ( d \nrightarrow a \vee d \nrightarrow b \righ
  \item If a state $a$ is a merge state with a state $b$ and $a$ as no predecessor for the $\prec_i$ relation then $a$ is labeled with $\mathrm{label}(b) + \delta_i$
  \item If a state $a$ is a merge state with a state $b$ and it has a biggest predecessor $c$ then $a$ is labeled with $\mathrm{max}(\mathrm{label}(b),\mathrm{label}(c)) + \delta_i$. Where $\max$ is the max on each component of the vector
 \end{enumerate}
-We define the $\leq$ relation on integer vector of size $n$ by : $u\leq v \Leftrightarrow \forall i \in \{0,\cdots,n-1\} u(i) \leq v(i)$ and $< := \leq \setminus =$. We have the following proposition on the labels of the states :
+Such a labeling can be seen on \ref{fig:23}. We define the $\leq$ relation on integer vector of size $n$ by : $u\leq v \Leftrightarrow \forall i \in \{0,\cdots,n-1\} u(i) \leq v(i)$ and $< := \leq \setminus =$. We have the following proposition on the labels of the states :
 \begin{proposition}
  $ a \rightarrow b \Leftrightarrow \mathrm{label}(a) <  \mathrm{label}(b)$
 \end{proposition}
