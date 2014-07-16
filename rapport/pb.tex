@@ -1,0 +1,246 @@
+We assume that we have a collection of processes $P_0,\cdots,P_{n-1}$ that can communicate by exchanging messages. In our work we will assume that the processes can do two main actions that are "commiting" and "merging" with an other process. Each of the process $P_i$ is doing a serie of action in a certain total order $\prec_i$, each actions resulting in a new state for the process.
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.3\textwidth}
+\centering
+ \scalebox{0.7}{
+ \begin{tikzpicture}
+  \begin{scope}[start chain=2 going below,node distance= 1cm]
+    \node [on chain=2,arn_bb,draw = none] {$P_0$};
+    \node [on chain=2,arn_nb] (p00) {C};
+    \node [on chain = 2,arn_nb] (p01) {$M(1)$};
+    \node [on chain = 2,arn_nb] (p02) {C};
+    \node [on chain = 2,arn_nb] (p03) {$M(2)$};
+    \node [on chain=2,arn_nb] (p04) {C};
+    \node [on chain=2,arn_bb,draw = none] (p05) {};
+\end{scope}
+
+\begin{scope}[shift={(2cm,0cm)},start chain=2 going below,node distance= 1cm]
+\node [on chain=2,arn_bb,draw = none] {$P_1$};
+    \node [on chain=2,arn_nb] (p10) {C};
+    \node [on chain = 2,arn_nb] (p11) {C};
+    \node [on chain = 2,arn_nb] (p12) {C};
+    \node [on chain = 2,arn_nb] (p13) {C};
+    \node [on chain=2,arn_nb] (p14) {$M(2)$};
+    \node [on chain=2,arn_bb,draw = none] (p15) {};
+\end{scope}
+
+\begin{scope}[shift={(4cm,0cm)},start chain=2 going below,node distance= 1cm]
+\node [on chain=2,arn_bb,draw = none] {$P_2$};
+    \node [on chain=2,arn_nb] (p20) {C};
+    \node [on chain = 2,arn_nb] (p21) {$M(0)$};
+    \node [on chain = 2,arn_nb] (p22) {C};
+    \node [on chain = 2,arn_nb] (p23) {C};
+    \node [on chain=2,arn_nb] (p24) {$M(0)$};
+    \node [on chain=2,arn_bb,draw = none] (p25) {};
+\end{scope}
+\draw[->,black,very thick] (p00.south) to (p01.north);
+\draw[->,black,very thick] (p01.south) to (p02.north);
+\draw[->,black,very thick] (p02.south) to (p03.north);
+\draw[->,black,very thick] (p03.south) to (p04.north);
+\draw[->,black,very thick] (p04.south) to (p05.north);
+
+
+\draw[->,black,very thick] (p10.south) to (p11.north);
+\draw[->,black,very thick] (p11.south) to (p12.north);
+\draw[->,black,very thick] (p12.south) to (p13.north);
+\draw[->,black,very thick] (p13.south) to (p14.north);
+\draw[->,black,very thick] (p14.south) to (p15.north);
+
+\draw[->,black,very thick] (p20.south) to (p21.north);
+\draw[->,black,very thick] (p21.south) to (p22.north);
+\draw[->,black,very thick] (p22.south) to (p23.north);
+\draw[->,black,very thick] (p23.south) to (p24.north);
+\draw[->,black,very thick] (p24.south) to (p25.north);
+
+\draw[zigzag] (p10) to (p01);
+\draw[zigzag] (p22) to (p03);
+\draw[zigzag] (p23) to (p14);
+\draw[zigzag] (p00) to (p21);
+\draw[zigzag] (p03) to (p24);
+ \end{tikzpicture}
+ }
+ \caption{Three processes sharing information} \label{fig:21}
+\end{minipage}
+\begin{minipage}{0.3\textwidth}
+\centering
+\scalebox{0.7}{
+ \begin{tikzpicture}
+  \begin{scope}[start chain=2 going below,node distance= 1cm]
+    \node [on chain=2,arn_bb,draw = none] {$P_0$};
+    \node [on chain=2,arn_rb] (p00) {C};
+    \node [on chain = 2,arn_nb] (p01) {$M(1)$};
+    \node [on chain = 2,arn_rb] (p02) {C};
+    \node [on chain = 2,arn_nb] (p03) {$M(2)$};
+    \node [on chain=2,arn_nb] (p04) {C};
+    \node [on chain=2,arn_bb,draw = none] (p05) {};
+\end{scope}
+
+\begin{scope}[shift={(2cm,0cm)},start chain=2 going below,node distance= 1cm]
+\node [on chain=2,arn_bb,draw = none] {$P_1$};
+    \node [on chain=2,arn_nb] (p10) {C};
+    \node [on chain = 2,arn_nb] (p11) {C};
+    \node [on chain = 2,arn_nb] (p12) {C};
+    \node [on chain = 2,arn_nb] (p13) {C};
+    \node [on chain=2,arn_nb] (p14) {$M(2)$};
+    \node [on chain=2,arn_bb,draw = none] (p15) {};
+\end{scope}
+
+\begin{scope}[shift={(4cm,0cm)},start chain=2 going below,node distance= 1cm]
+\node [on chain=2,arn_bb,draw = none] {$P_2$};
+    \node [on chain=2,arn_nb] (p20) {C};
+    \node [on chain = 2,arn_nb] (p21) {$M(0)$};
+    \node [on chain = 2,arn_rb] (p22) {C};
+    \node [on chain = 2,arn_nb] (p23) {C};
+    \node [on chain=2,arn_nb] (p24) {$M(0)$};
+    \node [on chain=2,arn_bb,draw = none] (p25) {};
+\end{scope}
+\draw[->,red,very thick] (p00.south) to (p01.north);
+\draw[->,red,very thick] (p01.south) to (p02.north);
+\draw[->,black,very thick] (p02.south) to (p03.north);
+\draw[->,black,very thick] (p03.south) to (p04.north);
+\draw[->,black,very thick] (p04.south) to (p05.north);
+
+
+\draw[->,black,very thick] (p10.south) to (p11.north);
+\draw[->,black,very thick] (p11.south) to (p12.north);
+\draw[->,black,very thick] (p12.south) to (p13.north);
+\draw[->,black,very thick] (p13.south) to (p14.north);
+\draw[->,black,very thick] (p14.south) to (p15.north);
+
+\draw[->,black,very thick] (p20.south) to (p21.north);
+\draw[->,red,very thick] (p21.south) to (p22.north);
+\draw[->,black,very thick] (p22.south) to (p23.north);
+\draw[->,black,very thick] (p23.south) to (p24.north);
+\draw[->,black,very thick] (p24.south) to (p25.north);
+
+\draw[zigzag] (p10) to (p01);
+\draw[zigzag] (p22) to (p03);
+\draw[zigzag] (p23) to (p14);
+\draw[zigzagred] (p00) to (p21);
+\draw[zigzag] (p03) to (p24);
+ \end{tikzpicture}
+ }
+ \caption{Biggest common ancestor between two nodes}  \label{fig:22}
+\end{minipage}
+\begin{minipage}{0.3\textwidth}
+\centering
+\scalebox{0.7}{
+ \begin{tikzpicture}
+  \begin{scope}[start chain=2 going below,node distance= 1cm]
+    \node [on chain=2,arn_bb,draw = none] {$P_0$};
+    \node [on chain=2,arn_nb] (p00) {$1,0,0$};
+    \node [on chain = 2,arn_nb] (p01) {$2,1,0$};
+    \node [on chain = 2,arn_nb] (p02) {$3,1,0$};
+    \node [on chain = 2,arn_nb] (p03) {$4,1,3$};
+    \node [on chain=2,arn_nb] (p04) {$5,1,3$};
+    \node [on chain=2,arn_bb,draw = none] (p05) {};
+\end{scope}
+
+\begin{scope}[shift={(2cm,0cm)},start chain=2 going below,node distance= 1cm]
+\node [on chain=2,arn_bb,draw = none] {$P_1$};
+    \node [on chain=2,arn_nb] (p10) {$0,1,0$};
+    \node [on chain = 2,arn_nb] (p11) {$0,2,0$};
+    \node [on chain = 2,arn_nb] (p12) {$0,3,0$};
+    \node [on chain = 2,arn_nb] (p13) {$0,4,0$};
+    \node [on chain=2,arn_nb] (p14) {$1,5,4$};
+    \node [on chain=2,arn_bb,draw = none] (p15) {};
+\end{scope}
+
+\begin{scope}[shift={(4cm,0cm)},start chain=2 going below,node distance= 1cm]
+\node [on chain=2,arn_bb,draw = none] {$P_2$};
+    \node [on chain=2,arn_nb] (p20) {$0,0,1$};
+    \node [on chain = 2,arn_nb] (p21) {$1,0,2$};
+    \node [on chain = 2,arn_nb] (p22) {$1,0,3$};
+    \node [on chain = 2,arn_nb] (p23) {$1,0,4$};
+    \node [on chain=2,arn_nb] (p24) {$4,1,5$};
+    \node [on chain=2,arn_bb,draw = none] (p25) {};
+\end{scope}
+\draw[->,black,very thick] (p00.south) to (p01.north);
+\draw[->,black,very thick] (p01.south) to (p02.north);
+\draw[->,black,very thick] (p02.south) to (p03.north);
+\draw[->,black,very thick] (p03.south) to (p04.north);
+\draw[->,black,very thick] (p04.south) to (p05.north);
+
+
+\draw[->,black,very thick] (p10.south) to (p11.north);
+\draw[->,black,very thick] (p11.south) to (p12.north);
+\draw[->,black,very thick] (p12.south) to (p13.north);
+\draw[->,black,very thick] (p13.south) to (p14.north);
+\draw[->,black,very thick] (p14.south) to (p15.north);
+
+\draw[->,black,very thick] (p20.south) to (p21.north);
+\draw[->,black,very thick] (p21.south) to (p22.north);
+\draw[->,black,very thick] (p22.south) to (p23.north);
+\draw[->,black,very thick] (p23.south) to (p24.north);
+\draw[->,black,very thick] (p24.south) to (p25.north);
+
+\draw[zigzag] (p10) to (p01);
+\draw[zigzag] (p22) to (p03);
+\draw[zigzag] (p23) to (p14);
+\draw[zigzag] (p00) to (p21);
+\draw[zigzag] (p03) to (p24);
+ \end{tikzpicture}
+ }
+ \caption{Labeling Nodes with partial order}  \label{fig:23}
+\end{minipage}
+
+\end{figure}
+
+\paragraph{} The figure \ref{fig:21} shows an example with three processes doing commits (C) and Merging with other process ($M(i)$). This figure shows an underlying parial order between elements as defined by Leslie Lamport (TODO : put reference). We denote $\rightarrow$ a relation on states defined by : If $a$ and $b$ are two states of the same process $P_i$ and $a \prec_i b$ then $a \rightarrow b$. If $b$ is a merge state and $a$ is the state from which the merge occured on another process then $a \rightarrow b$. The $\rightarrow$ relation is closed under transitivity. We define the "Biggest common ancestors of $a$ and $b$" the set 
+$\{c, 
+c\rightarrow a 
+\wedge 
+c \rightarrow b 
+\wedge 
+\left ( 
+\forall d\ ,
+c \rightarrow d \Rightarrow \left ( d \nrightarrow a \vee d \nrightarrow b \right )
+\right )
+\}$. This set can be of any size, however \ref{fig:31} underlines what having two biggest common ancestors mean in term of merging. 
+\paragraph{} Finding the biggest common ancestor(s) is an important problem when two processes want to merge, therefore it is interesting to find a way to discover quickly and without exchanging too many informations between two processes what are the biggest common ancestors of two nodes. For this purpose we label each of the states with a vector of integers of size $n$, $n$ being the total number of processes exchanging information. $\delta_i$ denotes the vector having zeros everywhere except a 1 at the $i$-th position. We build the label of the states in the "$\rightarrow$" order:
+\begin{enumerate}
+ \item If a state $a$ is a commit state on a process $P_i$ and as no predecessor for the $\prec_i$ relation then $a$ is labeled with $\delta_i$
+ \item If a state $a$ is a commit state on a process $P_i$ and it has a biggest predecessor $b$ then $a$ is labeled with $\mathrm{label}(b) + \delta_i$
+ \item If a state $a$ is a merge state with a state $b$ and $a$ as no predecessor for the $\prec_i$ relation then $a$ is labeled with $\mathrm{label}(b) + \delta_i$
+ \item If a state $a$ is a merge state with a state $b$ and it has a biggest predecessor $c$ then $a$ is labeled with $\mathrm{max}(\mathrm{label}(b),\mathrm{label}(c)) + \delta_i$. Where $\max$ is the max on each component of the vector
+\end{enumerate}
+We define the $\leq$ relation on integer vector of size $n$ by : $u\leq v \Leftrightarrow \forall i \in \{0,\cdots,n-1\} u(i) \leq v(i)$ and $< := \leq \setminus =$. We have the following proposition on the labels of the states :
+\begin{proposition}
+ $ a \rightarrow b \Leftrightarrow \mathrm{label}(a) <  \mathrm{label}(b)$
+\end{proposition}
+\begin{proposition}
+ If $c$ is the only biggest common ancestor of $a$ and $b$ then $\mathrm{label}(c) = \mathrm{min}(\mathrm{label}(a),\mathrm{label}(b))$
+\end{proposition}
+
+
+
+For the purpose of the introduction we will assume that for every two states we only have one biggest common ancestor.
+\begin{figure}[H]
+ \centering
+ \begin{tikzpicture}
+  \begin{scope}[shift={(2cm,0cm)},start chain=2 going below,node distance= 1cm]
+\node [on chain=2,arn_bb,draw = none] {$P_1$};
+    \node [on chain=2,arn_nb] (p10) {C};
+    \node [on chain = 2,arn_nb] (p11) {$M(0)$};
+    \node [on chain=2,arn_bb,draw = none] (p12) {};
+    \end{scope}
+    \begin{scope}[shift={(0cm,0cm)},start chain=2 going below,node distance= 1cm]
+\node [on chain=2,arn_bb,draw = none] {$P_1$};
+    \node [on chain=2,arn_nb] (p00) {C};
+    \node [on chain = 2,arn_nb] (p01) {$M(1)$};
+    \node [on chain=2,arn_bb,draw = none] (p02) {};
+    \end{scope}
+    
+\draw[->,black,very thick] (p00.south) to (p01.north);
+\draw[->,black,very thick] (p01.south) to (p02.north);
+\draw[->,black,very thick] (p10.south) to (p11.north);
+\draw[->,black,very thick] (p11.south) to (p12.north);
+
+\draw[zigzag] (p00) to (p11);
+\draw[zigzag] (p10) to (p01);
+ \end{tikzpicture}
+ \caption{Two biggest common ancestors} \label{fig:31}
+
+\end{figure}

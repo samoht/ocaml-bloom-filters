@@ -25,6 +25,7 @@
 \newtheorem{definition}{Definition}
 \theoremstyle{definition}
 \usepackage{tikz}
+\usetikzlibrary{decorations.pathmorphing}
 \usetikzlibrary{arrows}
 \usetikzlibrary{chains,fit,shapes}
 \usepackage{fullpage}
@@ -32,10 +33,28 @@
 \tikzset{
   treenode/.style = {align=center, inner sep=0pt, text centered,
     font=\sffamily},
+      zigzag/.style = {->,black,very thick,line join=round,
+decorate, decoration={
+    zigzag,
+    segment length=4,
+    amplitude=.9,post=lineto,
+    post length=2pt
+}},
+zigzagred/.style = {->,red,very thick,line join=round,
+decorate, decoration={
+    zigzag,
+    segment length=4,
+    amplitude=.9,post=lineto,
+    post length=2pt
+}},
+  arn_bb/.style = {treenode, circle, black, font=\sffamily\bfseries, draw=black,
+    fill=white, text width=2.5em, very thick},% arbre rouge noir, noeud noir
   arn_ns/.style = {treenode, rectangle, white, font=\sffamily\bfseries, draw=black,
     fill=black, minimum width=1.5em, minimum height=1.5em, very thick},% arbre rouge noir, noeud noir
   arn_n/.style = {treenode, circle , white, font=\sffamily\bfseries, draw=black,
     fill=black, text width=1.5em},% arbre rouge noir, noeud noir
+    arn_nb/.style = {treenode, circle , white, font=\sffamily\bfseries, draw=black,
+    fill=black, text width=2.5em},
   arn_r/.style = {treenode, circle , red, draw=red, 
     text width=1.5em, very thick},% arbre rouge noir, noeud rouge
   arn_x/.style = {treenode, rectangle, draw=black,
@@ -74,9 +93,10 @@
 \input{caml.tex}
 \begin{document}
 \maketitle
-\begin{lstlisting}
-
-\end{lstlisting}
+\tableofcontents
+% \begin{lstlisting}
+% 
+% \end{lstlisting}
 
 \chapter{Introduction and scientific context}
 \chapter{Research subject}
@@ -560,7 +580,7 @@
   \end{tikzpicture}
   \caption{explore}
 \end{minipage}
-  \begin{minipage}{0.3\textwidth}
+\begin{minipage}{0.3\textwidth}
   \centering
  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
   thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
