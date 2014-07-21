@@ -598,4 +598,112 @@ let main3 () =
   done;
   close_out cout;;
 
-main3 ();;
+(*main3 ();;*)
+let compute_old_bf g n=
+  let rep = Hashtbl.create 10 in
+  let visite_one node = 
+    let visited = Hashtbl.create 10 in
+    let rec visite_up node arr =
+      if (Hashtbl.mem visited node) then
+	()
+      else
+	begin
+	  Hashtbl.add visited node true;
+	  for i = 0 to (n-1) do 
+	    if (node.[i] = '1') then arr.(i) <- arr.(i) +1
+	  done;
+	  MyGraph.iter_pred (fun x -> visite_up x arr) g node
+	end
+    in
+    let rep = Array.make n 0 in
+    visite_up node (rep);
+    rep
+  in
+  let add_one node =
+    Hashtbl.add rep node (visite_one node)
+  in
+  MyGraph.iter_vertex add_one g;
+  rep;;
+      
+      
+let compute_bca g a b =
+  let hta = Hashtbl.create 10 in
+  let visiteda = Hashtbl.create 10 in
+  let rec visite_a node = 
+    if (Hashtbl.mem visiteda node) then
+      ()
+    else 
+      begin
+	Hashtbl.add visiteda node true;
+	MyGraph.iter_pred visite_a g node
+      end
+  in
+  visite_a a;
+  let visitedb = Hashtbl.create 10 in
+  let nb_bca = ref 0 in
+  let rec visite_b node = 
+    if (Hashtbl.mem visitedb node) then
+      ()
+    else
+      begin
+	Hashtbl.add visitedb node true;
+	if (Hashtbl.mem visiteda node) then
+	  nb_bca := !nb_bca +1
+	else 
+	  MyGraph.iter_pred visite_b g node; 
+      end
+  in
+  visite_b b;
+  !nb_bca;;
+let is_under a b n= 
+  let i = ref 0 in
+  while (!i < n && a.(!i) <= b.(!i)) do (incr i) done;
+  (!i = n);;
+
+let find_under min h =
+  let rep = ref 0 in
+  let deal_with_one key value =
+    if (is_under min value 160) then (incr rep)
+  in
+  Hashtbl.iter deal_with_one h;
+  !rep;;
+
+let compute_min repa repb n =
+  let rep = Array.make n 0 in
+  for i = 0 to (n-1) do
+    rep.(i) <- min (repa.(i)) (repb.(i))
+  done;
+  rep;;
+
+let main4 () =
+  
+  for k = 1 to 8 do
+  
+    let coutbca = open_out ("resultprem/bca"^(string_of_int k)) in
+    let coutnum = open_out ("resultprem/num"^(string_of_int k)) in
+    for p = 1 to 10 do
+      let g,b = DagGen.alea 100 (k*10) 160 0 ((float_of_int p)/.10.) in
+      let htbl = compute_old_bf g 160 in
+      let num = ref 0 in
+      let nbc = ref 0 in
+      let compt = ref 0 in
+      let deal_with_couple a b =
+	if (!compt mod 100 = 0) then (Printf.printf "[Computing BCA and NUM] %d/100 \n" (!compt/100); flush stdout;);
+	incr compt;
+	let m = compute_min (Hashtbl.find htbl a) (Hashtbl.find htbl b) 160 in
+	let nb_under_min = find_under m htbl in
+	let nb_bca= compute_bca g a b in
+	num := !num + nb_under_min;
+	nbc := !nbc + nb_bca;
+      in
+      MyGraph.iter_vertex (fun x -> (MyGraph.iter_vertex (fun y -> deal_with_couple x y) g)) g;
+      Printf.printf "%d %d\n" k p;
+      Printf.fprintf coutbca "%f %f\n" (float_of_int p /. 10.) (float_of_int (!nbc) /. 10000.);
+      Printf.fprintf coutnum "%f %f\n" (float_of_int p /. 10.) (float_of_int (!num) /. 10000.);
+    done;
+    close_out coutbca;
+    close_out coutnum;
+  done;;
+
+main4();
+    

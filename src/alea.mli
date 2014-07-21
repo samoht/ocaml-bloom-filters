@@ -10,7 +10,11 @@ end
 module type Elem = 
 sig
   type t
+  (** [init n] initializes the Random element generator where [n] is a seed
+  *)
   val init : int -> unit
+  (** [next_item n] gives back a new element where [n] is the size of the new element
+  *)
   val next_item : int -> t
 end
 
