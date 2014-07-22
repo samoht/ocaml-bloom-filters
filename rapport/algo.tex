@@ -1,3 +1,48 @@
+In the following we will consider two DAGs, each with a particular node called head. The head is such that every node in the considered DAG are ancestors of the head. One of the DAG is will be refered to as Client or $Bob$ and the other one as Server or $Alice$. $\mathrm{Ancestor}(Alice)$ and $\mathrm{Ancestor}(Bob)$ are the considered DAGs and the aim of the algorithm is to be able to compute $\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob) = \{ x\ ,\ x \in \mathrm{Ancestor}(Alice) \wedge x \notin \mathrm{Ancestor}(Bob)\}$. The complexity of the algorithm will be expressed in terms of $n = \#(\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob))$. In terms of application, the client and the server are two entities that are physically distinct, therefore it was important during the design of the algorithm to keep in mind and to be aware that :
+\begin{itemize}
+ \item The quantity of information exchanged between the two processes shall be the smaller possible
+ \item We have to consider the complexity on both processes
+ \item There can be no pre-computation of any form, because the shape of the global DAG (with multiple head) is evolving in time and is not known at the beginning.
+ \item There is no high authority that has a memory of every thing.
+\end{itemize}
+\paragraph{} The previous section underlined that we were not able to find a way to compute easily the set of BCA, moreover if the server has to send the difference $\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob)$ then at some point we will have to go all over this difference at some point, therefore we decided that the server could cross the part of its history corresponding to the difference. However the server does not know what nodes are already in the history of the client. Hence the client need to send to the server its history so that the server knows when the exploration of its past shal stop. Sending all of the client's history can requiere a huge exchange of data, moreover in applications we are interested in (git) the difference we are trying to compute is usually small compared to the size of the all history. the client shall therefore only send the latest event in its history (a fixed number) so that in most case the server manages to make the link between the two histories. However in some cases the server will not be able to find any of the client's latest node in its history, in such cases the server will have to go throw all of its history (because the link can be anywhere) to understand that it has nothing in common with this set of latest nodes. We do not want the server to go throw all of its history as we have no bound on the size of this history. Thus the client need to tell the server that at some point of its exploration the server need to stop because there is no point in continuing the exploration. We introduce the Border of a set of nodes $A$ as defined such that for every nodes in $A$ each of its predecessor are either in $A$ or in the border of $A$. To sum up, the client divides its history in packages that will be called "window" and to each window we associate a "border" (see \ref{fig:twoproc}). Now if the client send a window and the union of all the borders to the server, this one will, at some point, find one of the two while exploring its history bottom-up and therefore will not have to go across all of its history.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{scope}
+\coordinate (A) at (0,0);
+\coordinate (B) at (4,10);
+\coordinate (C) at (-4,10);
+\draw [thick] (A) -- (B) coordinate[pos = 0.4] (B1) {} coordinate [pos = 0.42] (B1b) {} coordinate[pos = 0.7] (B2) {} coordinate[pos = 0.72] (B2b) {};
+\draw [thick] (B) -- (C) coordinate[pos = 0.5] (midBC) {};
+\draw [thick] (A) -- (C) coordinate[pos = 0.5] (C1) {} coordinate [pos = 0.52] (C1b) {} coordinate[pos = 0.8] (C2) {} coordinate[pos = 0.82] (C2b) {};
+\draw [thick, fill = LimeGreen,fill opacity = 0.5] (A) -- (B1) .. controls (1,3) and (-1,7) .. (C1) -- (A);
+\draw [thick, fill = green,fill opacity = 0.5] (B1) .. controls (1,3) and (-1,7) .. (C1) -- (C2) .. controls (-2,6) and (2,8) .. (B2) -- (B1);
+\draw [thick, fill = ForestGreen, fill opacity = 0.5] (C2) .. controls (-2,6) and (2,8) .. (B2) -- (B) -- (C) -- (C2);
+\draw [thick, fill = red, fill opacity = 1] (B1b) .. controls (1,3.1) and (-1,7.1) .. (C1b) -- (C1) .. controls (-1,7) and (1,3) .. (B1) -- (B1b);
+\draw [thick, fill = red, fill opacity = 1] (C2) .. controls (-2,6) and (2,8) .. (B2) -- (B2b) .. controls (2,8.1) and (-2,6.1) .. (C2b) -- (C2);
+\draw [draw = none] (A) -- (midBC) node[pos = 0.3] {$A_0$} node[pos = 0.6] {$A_1$} node[pos = 0.9] {$A_2$};
+
+\end{scope}
+\begin{scope}[shift={(4cm,0cm)}]
+\coordinate (D) at (0,0);
+\coordinate (E) at (4,10);
+\coordinate (F) at (-4,10);
+\draw [thick] (D) -- (E) coordinate[pos = 0.5] (E1) {} coordinate [pos = 0.52] (E1b) {} coordinate[pos = 0.8] (E2) {} coordinate[pos = 0.82] (E2b) {};
+\draw [thick] (E) -- (F) coordinate[pos = 0.5] (midEF) {};
+\draw [thick] (D) -- (F) coordinate[pos = 0.3] (F1) {} coordinate [pos = 0.32] (F1b) {} coordinate[pos = 0.6] (F2) {} coordinate[pos = 0.62] (F2b) {};
+\draw [thick, fill = Cerulean,fill opacity = 0.5] (D) -- (E1) .. controls (1,3) and (-1,7) .. (F1) -- (D);
+\draw [thick, fill = blue,fill opacity = 0.5] (E1) .. controls (1,3) and (-1,7) .. (F1) -- (F2) .. controls (-2,6) and (2,8) .. (E2) -- (E1);
+\draw [thick, fill = SkyBlue, fill opacity = 0.5] (F2) .. controls (-2,6) and (2,8) .. (E2) -- (E) -- (F) -- (F2);
+\draw [thick, fill = red, fill opacity = 1] (E1b) .. controls (1,3.1) and (-1,7.1) .. (F1b) -- (F1) .. controls (-1,7) and (1,3) .. (E1) -- (E1b);
+\draw [thick, fill = red, fill opacity = 1] (F2) .. controls (-2,6) and (2,8) .. (E2) -- (E2b) .. controls (2,8.1) and (-2,6.1) .. (F2b) -- (F2);
+\draw [draw = none] (D) -- (midEF) node[pos = 0.3] {$B_0$} node[pos = 0.6] {$B_1$} node[pos = 0.9] {$B_2$};
+\end{scope}
+\end{tikzpicture}
+\caption{Two processes sharing a part of their history and their decomposition in Windows and Borders} \label{fig:twoproc}
+\end{figure}
+
 \begin{algorithm}[H]
   \SetAlgoLined
   \caption{Finding some of the ancestors of $Alice$ not known by $Bob$}
