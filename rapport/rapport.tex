@@ -108,15 +108,16 @@ decorate, decoration={
 \input{bf.tex}
 \chapter{Results}
 \section{Preliminary result on Dags and Bloomfilters}
+\label{sec:prelim}
 \input{prelim.tex}
-\section{Hash Functions}
-\input{hash.tex}
 \section{Algorithm}
 \subsection{General algorithm}
 \input{algo.tex}
 \subsection{The False-positive case}
 \input{fp.tex}
 \subsection{}
+\section{Hash Functions}
+\input{hash.tex}
 \section{Evaluation}
 \chapter{Conclusion and bibliography}
 %   \input{biblio.tex}
@@ -130,3 +131,36 @@ decorate, decoration={
 
 \end{document}
 
+% - p2: intro and context:
+% NetOS -> Ocaml Labs -> Mirage -> Irmin
+% 
+
+% Rajoute des Figures~\ref{xxx} a chaque fois que tu cites une figure (c'est valable dans tout le document)
+% prop1 et 2: rajoute des références (et/ou des preuves)
+ 
+% p5: Figure 2.2 mettre plus d'info dans les captions: dire que 1 est le "tip" d'Alice et 6 est le "tip" de Bob
+
+% dire qu'on peut écrire BF plutôt que Bloom filter et l'utiliser dans le rapport
+%
+% proposition 3: manque la ref
+% 
+% p7. Prop 4. -> ce n'est plus une prop mais une hypothèse, 
+
+% 1. et 2. -> manque les refs
+% 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% pour le coeur de la partie, je pense qu'il faut:
+% - expliquer la figure 3.3
+% - donner le type des fonctions
+% - donner les invariants
+% - pointer vers l'appendix pour avoir plus de détails (ou le code) mais si les invariants sont suffisamment clairs, c'est même pas sur qu'on en est besoin
+% 
+% p14. rajouter quelque part des explications sur le choix de la taille des slices. Rajouter une reference a cette section a la fin de la 1er phrase de 3.3.2
+% 
+% p15. "having a false positive in a border is very rare" -> si les frontères sont pleines, c'est pareil que pour les BF des slices, du coup je suis pas fan de cette phrase. Peut-être rajouter un example pour montrer les ravages que peuvent causer un faux positif sur un frontière (et dire que c'est un cas pathologique vraiment compliqué a construire)
+% 
+% fig 3.15: sympa, mais je rajouterais un peu plus d'infos dans les captions (ie. a chaque fois, dire quels sont les noeuds sélectionnés)
+% 
+% manque une section 3.3.3 sur comment borner les frontières et la liste des slices (le client a une mémoire bornée) et que le serveur n'a pas besoin de garder d'état en mémoire (le serveur aussi a une mémoire bornée)
+% 
+% 3.4 évaluation: c'est tout vide!! :p

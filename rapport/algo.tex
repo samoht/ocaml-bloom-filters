@@ -1,17 +1,36 @@
-In the following we will consider two DAGs, each with a particular node called head. The head is such that every node in the considered DAG are ancestors of the head. One of the DAG is will be refered to as Client or $Bob$ and the other one as Server or $Alice$. $\mathrm{Ancestor}(Alice)$ and $\mathrm{Ancestor}(Bob)$ are the considered DAGs and the aim of the algorithm is to be able to compute $\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob) = \{ x\ ,\ x \in \mathrm{Ancestor}(Alice) \wedge x \notin \mathrm{Ancestor}(Bob)\}$. The complexity of the algorithm will be expressed in terms of $n = \#(\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob))$. In terms of application, the client and the server are two entities that are physically distinct, therefore it was important during the design of the algorithm to keep in mind and to be aware that :
-\begin{itemize}
+In the following we will consider two DAGs, each with some particular nodes called head. The set of heads is the smallest set so that every node in the considered DAG is an ancestor of one of the head. One of the DAG will be refered to as Client or $Bob$ and the other one as Server or $Alice$. $\mathrm{Ancestor}(Alice)$ and $\mathrm{Ancestor}(Bob)$ are the considered DAGs and the aim of the algorithm is to be able to compute $\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob) = \{ x\ ,\ x \in \mathrm{Ancestor}(Alice) \wedge x \notin \mathrm{Ancestor}(Bob)\}$. The complexity of the algorithm will be expressed in terms of $n = \#(\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob))$. In terms of application, the client and the server are two entities that are physically distinct, therefore it was important during the design of the algorithm to keep in mind and to be aware that :
+\begin{enumerate}
  \item The quantity of information exchanged between the two processes shall be the smaller possible
- \item We have to consider the complexity on both processes
- \item There can be no pre-computation of any form, because the shape of the global DAG (with multiple head) is evolving in time and is not known at the beginning.
+ \item We want to minimise the complexity on both processes
+ \item There can be no no pre-assumptions on the shape of the graph, because the shape of the global DAG (with multiple head) is evolving in time and is not known at the beginning.
  \item There is no high authority that has a memory of every thing.
-\end{itemize}
-\paragraph{} The previous section underlined that we were not able to find a way to compute easily the set of BCA, moreover if the server has to send the difference $\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob)$ then at some point we will have to go all over this difference at some point, therefore we decided that the server could cross the part of its history corresponding to the difference. However the server does not know what nodes are already in the history of the client. Hence the client need to send to the server its history so that the server knows when the exploration of its past shal stop. Sending all of the client's history can requiere a huge exchange of data, moreover in applications we are interested in (git) the difference we are trying to compute is usually small compared to the size of the all history. the client shall therefore only send the latest event in its history (a fixed number) so that in most case the server manages to make the link between the two histories. However in some cases the server will not be able to find any of the client's latest node in its history, in such cases the server will have to go throw all of its history (because the link can be anywhere) to understand that it has nothing in common with this set of latest nodes. We do not want the server to go throw all of its history as we have no bound on the size of this history. Thus the client need to tell the server that at some point of its exploration the server need to stop because there is no point in continuing the exploration. We introduce the Border of a set of nodes $A$ as defined such that for every nodes in $A$ each of its predecessor are either in $A$ or in the border of $A$. To sum up, the client divides its history in packages that will be called "window" and to each window we associate a "border" (see \ref{fig:twoproc}). Now if the client send a window and the union of all the borders to the server, this one will, at some point, find one of the two while exploring its history bottom-up and therefore will not have to go across all of its history.
+\end{enumerate}
+\paragraph{} The section~\ref{sec:prelim} underlined that we were not able to find a way to compute easily the set of BCA, moreover if the server has to send the difference $\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob)$ then at some point we will have to go all over this difference, therefore we decided that the server could cross the part of its history corresponding to the difference.
+% However the server does not know what nodes are already in the history of the client. Hence the client need to send to the server its history so that the server knows when the exploration of its past shal stop. Sending all of the client's history can requiere a huge exchange of data, moreover in applications we are interested in (git) the difference we are trying to compute is usually small compared to the size of the all history. the client shall therefore only send the latest event in its history (a fixed number) so that in most case the server manages to make the link between the two histories. However 
+% in some cases the server will not be able to find any of the client's latest node in its history, in such cases the server will have to go throw all of its history (because the link can be anywhere) to understand that it has nothing in common with this set of latest nodes. We do not want the server to go throw all of its history as we have no bound on the size of this history. Thus the client need to tell the server that at some point of its exploration the server need to stop because there is no point in continuing the exploration. We introduce the Border of a set of nodes $A$ as defined such that for every nodes in $A$ each of its predecessor are either in $A$ or in the border of $A$. To sum up, the client divides its history in packages that will be called "window" and to each window we associate a "border" (see \ref{fig:twoproc}). Now if the client send a window and the union of all the borders to the server, this one will, at some point, find one of the two while exploring its history bottom-up and 
+% therefore will not have to go across all of its history.
+\begin{definition}
+ Given a DAG $\mathcal{D}$ and a partition of a the nodes of $\mathcal{D}$, we call a set of equivalent nodes for this partition a "slice of $\mathcal{D}$"
+\end{definition}
+\begin{definition}
+ Given a DAG $\mathcal{D}$ and a slice $\mathcal{S}$ we call the border of $\mathcal{S}$ (noted $\overline{\mathcal S}$)the smallest set such that $\forall x \in \mathcal{D},\ \forall y\in \mathrm{predecessor}{x} y\in \mathcal{S} \vee y \in \overline{\mathcal S}$.
+\end{definition}
+\paragraph{Idea of the algorithm} We assume that a partition of its DAG of ancestors is known by the client as well as well as a border for every slice of the partition.
+\begin{enumerate}
+ \item The client sends the list of its head, one of its slice and the union of all the border to the Server
+ \item The server goes up in its history and stop whenever it crosses a node in the slice are in the border.
+ \item The server computes the DAG $D$ of the successors of every nodes it found in slice.
+ \item The server computes a list of "nodes of interest" from which it shall starts again the exploration (those "nodes of interest" are the last successors of the nodes found in the border that are not in $D$)
+ \item The server sends back $D$ and the list of "nodes of interest"
+ \item The client starts again with anoter slice and instead of the list of its head it sends the list of "nodes of interest" it received from the server, except if there is no "node of interest" in which case the algorithm stop.
+\end{enumerate}
+\paragraph{} This algorithm as the property that the server have absolutely no memory. The figure~\ref{fig:twoproc} shows a partition of two dags in slices.
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}
 \begin{scope}
-\coordinate (A) at (0,0);
+\coordinate[label=below:$Alice$] (A) at (0,0) ;
 \coordinate (B) at (4,10);
 \coordinate (C) at (-4,10);
 \draw [thick] (A) -- (B) coordinate[pos = 0.4] (B1) {} coordinate [pos = 0.42] (B1b) {} coordinate[pos = 0.7] (B2) {} coordinate[pos = 0.72] (B2b) {};
@@ -26,7 +45,7 @@ In the following we will consider two DAGs, each with a particular node called h
 
 \end{scope}
 \begin{scope}[shift={(4cm,0cm)}]
-\coordinate (D) at (0,0);
+\coordinate[label=below:$Bob$] (D) at (0,0);
 \coordinate (E) at (4,10);
 \coordinate (F) at (-4,10);
 \draw [thick] (D) -- (E) coordinate[pos = 0.5] (E1) {} coordinate [pos = 0.52] (E1b) {} coordinate[pos = 0.8] (E2) {} coordinate[pos = 0.82] (E2b) {};
@@ -40,10 +59,17 @@ In the following we will consider two DAGs, each with a particular node called h
 \draw [draw = none] (D) -- (midEF) node[pos = 0.3] {$B_0$} node[pos = 0.6] {$B_1$} node[pos = 0.9] {$B_2$};
 \end{scope}
 \end{tikzpicture}
-\caption{Two processes sharing a part of their history and their decomposition in Windows and Borders} \label{fig:twoproc}
+\caption{Two processes sharing a part of their history and their decomposition in Slices and Borders} \label{fig:twoproc}
 \end{figure}
-
-\begin{algorithm}[H]
+The figure~\ref{fig:twoproc} underlines the fact that it is interesting to have a interesting partition of the node, in the sense that :
+\begin{enumerate}
+ \item We want the borders to be small so that we do not have to send a lot of information
+ \item We want to do the least sending/receiving data to/from the server possible
+ \item We want those slices/border to be easy to compute, in the sense that we do not want to cross all of the history of the client each time we want to merge
+ \item We want the slices to be all of the same size
+\end{enumerate}
+Let us assume we decided that the slices should be of size $n$ and that a process already knows a partition $\mathcal{P} = \{A_0,\cdots,A_m\}$ in slices of its ancestors and the paired borders. This process needs to add some nodes $S$ in its history. We start by filling the set in the partition with a size smaller that $n$, by adding the element from $S$ in an order verifying the order of the DAG. Therefore if $S$ contains two nodes $a$ and $b$, $a$ being a predecessor of $b$ then $a$ will be added prior than $b$. Once every partition is of size $n$ we add a new slice to $\mathcal P$. While adding a node in one of the slices we add it in the border if one of its parents is not in the slice. The order in which we add the elements ensures us that the border will be the small (regarding the number of element in the slice). Hence we can build a new partition and the corresponding borders quite easily from the previous one. Finally in order to ensure that there is not a lot of exchanges between the client and the server, the client send its slices from the newest to the oldest one. For example in figure~\ref{fig:twoproc} Bob will be sending the slices in the order $B_0$ then $B_1$ then $B_2$.
+\begin{algorithm}[H] 
   \SetAlgoLined
   \caption{Finding some of the ancestors of $Alice$ not known by $Bob$}
   \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
