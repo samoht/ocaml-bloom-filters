@@ -225,7 +225,8 @@ Such a labeling can be seen on Figure~\ref{fig:23}. We define the $\preccurlyeq$
 \end{proposition}
 
 These two propositions allow processes to find their common ancestor just by sending the label from one node to another and computing the minimum. Once the biggest common ancestor is found, the difference of history between the two nodes can easily be computed and shared so that one node know the history of the other.
-\paragraph{} In all of the previous remarks we considered the number of processes known and immutable with the time, however in many cases one can not know the number of processes evolving, for example in Git one does not know how many contributors will be part of a project at the end. In cases like Git it is particularly important to compute the biggest common ancestor when trying to merge two different branches, indeed all of their ancestors are ancestors of the two branches whereas all of their successors are not in the history of one of the two branches. In our case we will work on DAGs, with the only constraint that each node has a hashable identifier different from every other nodes. \textbf{Therefore we are working under the assumptions that two nodes can have more than one biggest common ancestor and there can be any number of processes involved}. The next figure gives an example of DAGs we will be considering Figure~\ref{fig:31}, and of the history of two processes Alice (Figure~\ref{fig:32}) and Bob (Figure~\ref{fig:33}) that have some history in common.
+\paragraph{} In all of the previous remarks we considered the number of processes known and immutable with the time, however in many cases one can not know the number of processes evolving, for example in Git one does not know how many contributors will be part of a project at the end. In cases like Git it is particularly important to compute the biggest common ancestor when trying to merge two different branches, indeed all of their ancestors are ancestors of the two branches whereas all of their successors are not in the history of one of the two branches. In our case we will work on DAGs, with the only constraint that each node has a hashable identifier different from every other nodes. \textbf{Therefore we are working under the assumptions that two nodes can have more than one biggest common ancestor and there can be any number of processes involved}. The next figure gives an example of DAGs we will be considering Figure~\ref{fig:31}, and of the history of two processes Alice (Figure~\ref{fig:32}) and 
+Bob (Figure~\ref{fig:33}) that have some history in common.
 
 \begin{figure}[H]
 \centering
@@ -298,7 +299,7 @@ These two propositions allow processes to find their common ancestor just by sen
   \path[thin] (a9) edge (a7);
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
-  \caption{Alice's ancestors} \label{fig:32}
+  \caption{Alice's ancestors, 1 is the head of Alice} \label{fig:32}
 \end{subfigure}
 \begin{subfigure}[b]{0.3\textwidth}
 \centering
@@ -330,7 +331,7 @@ These two propositions allow processes to find their common ancestor just by sen
   \path[thin] (a7) edge (a6);
   \path[thin] (a8) edge (a6);
   \end{tikzpicture}
-  \caption{Bob's ancestors} \label{fig:33}
+  \caption{Bob's ancestors, 6 is the head of Alice} \label{fig:33}
 \end{subfigure}
 \caption{two processes Alice and Bob that share a part of their history}
 \end{figure}

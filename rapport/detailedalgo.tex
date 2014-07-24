@@ -1,0 +1,94 @@
+ \begin{algorithm}
+  \SetAlgoLined
+  \caption{Finding some of the ancestors of $Alice$ not known by $Bob$}
+  \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+  \SetKwComment{tcc}{(*}{*)}
+  \KwData{\texttt{Alice\_Heads} : some nodes in the history of $Alice$, \texttt{Ancestor} : a dag of the ancesters of $Alice$, \texttt{G\_In} : a graph of ancestors of $Alice$ not known by $Bob$, \texttt{Bf} : The Bloom filter of $Bob$, \texttt{Bd} : The Border of $Bob$}
+%   \KwData{
+%     \begin{itemize}
+%     \item \texttt{Alice\_Heads} : some nodes in the history of $Alice$
+%     \item \texttt{Ancestor} : a dag of the ancesters of $Alice$
+%     \item \texttt{G\_In} : a graph of ancestors of $Alice$ not known by $Bob$
+%     \item \texttt{Bf} : The Bloom filter of $Bob$
+%     \item \texttt{Bd} : The Border of $Bob$
+%     \end{itemize}
+%     }
+  \KwResult{\texttt{G\_Out} : a graph of ancestors of $Alice$ not known by $Bob$, \texttt{node\_to\_check} : a list of ancestors of $Alice$ that shall be revisited with the next Bloomfilters}
+%   \KwResult{
+%   \begin{itemize}
+%   \item \texttt{G\_Out} : a graph of ancestors of $Alice$ not known by $Bob$
+%   \item \texttt{node\_to\_check} : a list of ancestors of $Alice$ that shall be revisited with the next Bloomfilters
+%   \end{itemize}
+%   }
+  
+\SetAlgoLined\DontPrintSemicolon
+
+  \texttt{explored} = $\varnothing$\;
+  \texttt{in\_bf} = $\varnothing$\;
+  \texttt{in\_border} = $\varnothing$\;
+  \texttt{to\_further\_explore} = $\varnothing$\;
+\SetKwFunction{explore}{\textbf{explore}}
+\SetKwFunction{belong}{\textbf{belong}}
+\SetKwFunction{addv}{\textbf{add\_vertex}}
+\SetKwFunction{adde}{\textbf{add\_edge}}
+\SetKwFunction{succ}{\textbf{successor}}
+\SetKwFunction{pred}{\textbf{predecessor}}
+\SetKwProg{myproc}{Procedure}{}{}
+\myproc{\explore{\texttt{node}}}{
+
+\If{\texttt{node} $\notin$ \texttt{explored}}
+{
+\texttt{explored} = \texttt{node} $\cup$ \texttt{explored}\;
+\eIf{\belong{\texttt{node,\texttt{Bf}}}}{
+  \texttt{in\_bf} = \texttt{node} $\cup$ \texttt{in\_bf}\;
+  }
+  {
+  \eIf{\belong{\texttt{node,\texttt{Bd}}}}{
+  \texttt{in\_border} = \texttt{node} $\cup$ \texttt{in\_border}\;
+  }
+  {
+  \For{\texttt{pere} $\in$ \pred{\texttt{Ancestor},\texttt{node}}}{
+    \explore{\texttt{pere}}
+  }
+  }
+  }
+}
+}
+\SetKwFunction{bf}{\textbf{find\_in\_bf}}
+\SetKwFunction{bd}{\textbf{find\_in\_border}}
+\myproc{\bf{\texttt{node}}}{
+  \If{$\texttt{node} \notin \texttt{explored} \wedge \texttt{node} \notin \texttt{G\_In}$}{
+    \addv{\texttt{G\_In},\texttt{node}}\;
+    \For{\texttt{fils} $\in$ \succ{\texttt{Ancestor},\texttt{node}}}{
+      \adde{\texttt{G\_In},\texttt{node},\texttt{fils}}\;
+      \bf{\texttt{fils}}
+    }
+  }
+}
+\myproc{\bd{\texttt{node}}}{
+  \If{$\texttt{node} \notin \texttt{explored}$}{
+    \eIf{$\texttt{node} \in \texttt{G\_In}$}{
+      \texttt{to\_further\_explore} = \texttt{node} $\cup$ \texttt{to\_further\_explore}\;
+    }
+    {
+      \For{\texttt{fils} $\in$ \succ{\texttt{Ancestor},\texttt{node}}}{
+      \bd{\texttt{fils}}
+      }    
+    }
+  }
+}
+\For{\texttt{node} $\in$ \texttt{Alice\_Heads}}{
+  \explore{\texttt{node}}
+}
+\texttt{explored} = $\varnothing$\;
+\For{\texttt{node} $\in$ \texttt{in\_bf}}{
+  \bf{\texttt{node}}
+}
+\texttt{explored} = $\varnothing$\;
+\For{\texttt{node} $\in$ \texttt{in\_border}}{
+  \bd{\texttt{node}}
+}
+\KwRet{(\texttt{G\_In,to\_further\_explore})}
+  
+  \end{algorithm}
+ 

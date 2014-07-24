@@ -68,194 +68,155 @@ The figure~\ref{fig:twoproc} underlines the fact that it is interesting to have 
  \item We want those slices/border to be easy to compute, in the sense that we do not want to cross all of the history of the client each time we want to merge
  \item We want the slices to be all of the same size
 \end{enumerate}
-Let us assume we decided that the slices should be of size $n$ and that a process already knows a partition $\mathcal{P} = \{A_0,\cdots,A_m\}$ in slices of its ancestors and the paired borders. This process needs to add some nodes $S$ in its history. We start by filling the set in the partition with a size smaller that $n$, by adding the element from $S$ in an order verifying the order of the DAG. Therefore if $S$ contains two nodes $a$ and $b$, $a$ being a predecessor of $b$ then $a$ will be added prior than $b$. Once every partition is of size $n$ we add a new slice to $\mathcal P$. While adding a node in one of the slices we add it in the border if one of its parents is not in the slice. The order in which we add the elements ensures us that the border will be the small (regarding the number of element in the slice). Hence we can build a new partition and the corresponding borders quite easily from the previous one. Finally in order to ensure that there is not a lot of exchanges between the client and the server, the client send its slices from the newest to the oldest one. For example in figure~\ref{fig:twoproc} Bob will be sending the slices in the order $B_0$ then $B_1$ then $B_2$.
-\begin{algorithm}[H] 
-  \SetAlgoLined
-  \caption{Finding some of the ancestors of $Alice$ not known by $Bob$}
-  \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
-  \SetKwComment{tcc}{(*}{*)}
-  \KwData{\texttt{Alice\_Heads} : some nodes in the history of $Alice$, \texttt{Ancestor} : a dag of the ancesters of $Alice$, \texttt{G\_In} : a graph of ancestors of $Alice$ not known by $Bob$, \texttt{Bf} : The Bloom filter of $Bob$, \texttt{Bd} : The Border of $Bob$}
-%   \KwData{
-%     \begin{itemize}
-%     \item \texttt{Alice\_Heads} : some nodes in the history of $Alice$
-%     \item \texttt{Ancestor} : a dag of the ancesters of $Alice$
-%     \item \texttt{G\_In} : a graph of ancestors of $Alice$ not known by $Bob$
-%     \item \texttt{Bf} : The Bloom filter of $Bob$
-%     \item \texttt{Bd} : The Border of $Bob$
-%     \end{itemize}
-%     }
-  \KwResult{\texttt{G\_Out} : a graph of ancestors of $Alice$ not known by $Bob$, \texttt{node\_to\_check} : a list of ancestors of $Alice$ that shall be revisited with the next Bloomfilters}
-%   \KwResult{
-%   \begin{itemize}
-%   \item \texttt{G\_Out} : a graph of ancestors of $Alice$ not known by $Bob$
-%   \item \texttt{node\_to\_check} : a list of ancestors of $Alice$ that shall be revisited with the next Bloomfilters
-%   \end{itemize}
+Let us assume we decided that the slices should be of size $n$ and that a process already knows a partition $\mathcal{P} = \{A_0,\cdots,A_m\}$ in slices of its ancestors and the paired borders. This process needs to add some nodes $S$ in its history. We start by filling the set in the partition with a size smaller that $n$, by adding the element from $S$ in an order verifying the order of the DAG. Therefore if $S$ contains two nodes $a$ and $b$, $a$ being a predecessor of $b$ then $a$ will be added prior than $b$. Once every partition is of size $n$ we add a new slice to $\mathcal P$. While adding a node in one of the slices we add it in the border if one of its parents is not in the slice. The order in which we add the elements ensures us that the border will be the small (regarding the number of element in the slice). Hence we can build a new partition and the corresponding borders quite easily from the previous one. Finally in order to ensure that there is not a lot of exchanges between the client and the 
+server, the client send its slices from the newest to the oldest one. For example in figure~\ref{fig:twoproc} Bob will be sending the slices in the order $B_0$ then $B_1$ then $B_2$.
+
+\paragraph{} As this algorithm is designed for multi processes, we wrote functions that can be used on the client side and on the server sides. Such functions are placed in a functor with the following signature :
+\begin{lstlisting}
+ module Make :
+  functor (B : Graph.Sig.I) ->
+    functor (D : DataSig with type t = B.V.t) ->
+sig
+  type v
+  (** type t is the main type, it contains the ancestor dag of the set
+      of nodes it represents as well as the datastructure *)
+  type t
+  val empty_state : unit -> t
+  (** [next_ring il ia bf bd] is the function that computes the list
+      of the next interesting nodes and the ring of nodes where [il]
+      is the list of previous interesting nodes and [ia] is the
+      ancestors list of the interesting nodes and [bf] is the current
+      bloomfilter and [bd] the current border*)
+  val next_ring : B.V.t list -> B.t list -> D.u -> D.u -> (B.t * (B.V.t list))
+  (** [increase_high s old_hd_l new_hd] is the function that computes
+      the state of new_hd where [s] is the state corresponding to the
+      union of new_hd's fathers and [old_hd_l] is the list of new_hd's
+      fathers and [new_hd] is new_hd *)
+  val increase_high :  t ->  B.V.t list -> B.V.t -> t
+  (** [increase_width s f hd] is the function that computes the state
+      of the union of nodes where [s] was the state of the first nodes and
+      [f] is the callback function and [hd] is the next node to be added
+      to the state *)
+  val increase_width : t -> ( D.u -> D.u -> B.V.t list -> (B.V.t list * B.t)) -> B.V.t -> t
+end
+\end{lstlisting}
+\paragraph{Arguments} B is the DAGs signature and D is a datastructure module that enables merge and membership queries (for complete signature see section~\ref{sec:datasig}).
+\paragraph{Invariants} In order to explain the way these functions work, we detailed some invariants on those functions.
+\begin{enumerate}
+ \item \label{itm:first} If $\texttt{il}$ is a list of nodes in the history of $A$, $\texttt{ia}$ is the list of the ancestor DAGs of the elements in $\texttt{il}$, if $\texttt{bf}$ is a datastructure containing a slice of $B$ and $\texttt{bd}$ is the union of all the borders of $B$, if $\texttt{g,l} = \texttt{next\_ring il ia bf bd}$ then 
+%  \begin{equation}
+\begin{align*}
+%  \begin{split}
+ &\forall (x_0,x_1,\cdots,x_n) \in \mathrm{ancestor}(B), \\
+(
+&\forall i \in \{1,\cdots,n-1\},\ x_i \notin \texttt{bd}\cup\texttt{bf} \wedge (x_0 \rightarrow x_1 \rightarrow \cdots \rightarrow x_n) \wedge x_0 \in \texttt{bf} \wedge x_n \in \texttt{il}
+\\ &\Rightarrow \{x_0,x_1,\cdots,x_n\} \subset \texttt{g}
+% \end{split}
+)\\
+&\wedge \\
+(
+ &\exists k \in \{1,\cdots,n-1\},\ (x_k \in \texttt{g} \wedge x_{k-1} \notin \texttt{g}) \wedge (x_0 \rightarrow x_1 \rightarrow \cdots \rightarrow x_n) \wedge x_0 \in \texttt{bd} \wedge \forall i \in \{1,\cdots,n-1\},\ x_i \notin \texttt{bd}\cup\texttt{bf} \\
+ &\Rightarrow x_{i-1} \in l
+)
+ \end{align*}
+ \item If $\texttt{s}$ is a state containing a DAG $D$ of the ancestors of a list $\texttt{old\_hd\_l}$ of nodes, then for all $\texttt{new\_hd}$, $\texttt{s'} = \texttt{increase\_high s old\_hd\_l new\_hd}$ is a state containing the DAG with head $\texttt{new\_hd}$, which fathers are $\texttt{old\_hd\_l}$ and $D$
+ \item If $\texttt{s}$ is a state containing a DAG $D$, $\texttt{f}$ is a function veryfing the invariant of item \ref{itm:first} and $\texttt{t}$ is a node in $B$ then $\texttt{s'} = \texttt{increase\_width s f t}$ is a state containint the DAG $D$ as well as $t$ and all of its ancestors in $B$.
+% \end{equation}
+\end{enumerate}
+% \begin{algorithm}[H] 
+%   \SetAlgoLined
+%   \caption{Finding some of the ancestors of $Alice$ not known by $Bob$}
+%   \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+%   \SetKwComment{tcc}{(*}{*)}
+%   \KwData{\texttt{Alice\_Heads} : some nodes in the history of $Alice$, \texttt{Ancestor} : a dag of the ancesters of $Alice$, \texttt{G\_In} : a graph of ancestors of $Alice$ not known by $Bob$, \texttt{Bf} : The Bloom filter of $Bob$, \texttt{Bd} : The Border of $Bob$}
+% %   \KwData{
+% %     \begin{itemize}
+% %     \item \texttt{Alice\_Heads} : some nodes in the history of $Alice$
+% %     \item \texttt{Ancestor} : a dag of the ancesters of $Alice$
+% %     \item \texttt{G\_In} : a graph of ancestors of $Alice$ not known by $Bob$
+% %     \item \texttt{Bf} : The Bloom filter of $Bob$
+% %     \item \texttt{Bd} : The Border of $Bob$
+% %     \end{itemize}
+% %     }
+%   \KwResult{\texttt{G\_Out} : a graph of ancestors of $Alice$ not known by $Bob$, \texttt{node\_to\_check} : a list of ancestors of $Alice$ that shall be revisited with the next Bloomfilters}
+% %   \KwResult{
+% %   \begin{itemize}
+% %   \item \texttt{G\_Out} : a graph of ancestors of $Alice$ not known by $Bob$
+% %   \item \texttt{node\_to\_check} : a list of ancestors of $Alice$ that shall be revisited with the next Bloomfilters
+% %   \end{itemize}
+% %   }
+%   
+% \SetAlgoLined\DontPrintSemicolon
+% \SetKwFunction{explore}{\textbf{explore}}
+% \SetKwFunction{belong}{\textbf{belong}}
+% \SetKwFunction{addv}{\textbf{add\_vertex}}
+% \SetKwFunction{adde}{\textbf{add\_edge}}
+% \SetKwFunction{succ}{\textbf{successor}}
+% \SetKwFunction{pred}{\textbf{predecessor}}
+% \SetKwProg{myproc}{Procedure}{}{}
+% \myproc{\explore{\texttt{node},\texttt{visited},\texttt{in\_bf},\texttt{in\_border}}}{
+% 
+%   \eIf{\belong{\texttt{node,\texttt{Bf}}}}{
+%     \KwRet{(\texttt{visited} $\cup$ \texttt{node},\texttt{in\_bf} $\cup$ \texttt{node},\texttt{in\_border})}
 %   }
-  
-\SetAlgoLined\DontPrintSemicolon
-\SetKwFunction{explore}{\textbf{explore}}
-\SetKwFunction{belong}{\textbf{belong}}
-\SetKwFunction{addv}{\textbf{add\_vertex}}
-\SetKwFunction{adde}{\textbf{add\_edge}}
-\SetKwFunction{succ}{\textbf{successor}}
-\SetKwFunction{pred}{\textbf{predecessor}}
-\SetKwProg{myproc}{Procedure}{}{}
-\myproc{\explore{\texttt{node},\texttt{visited},\texttt{in\_bf},\texttt{in\_border}}}{
-
-  \eIf{\belong{\texttt{node,\texttt{Bf}}}}{
-    \KwRet{(\texttt{visited} $\cup$ \texttt{node},\texttt{in\_bf} $\cup$ \texttt{node},\texttt{in\_border})}
-  }
-  {
-    \eIf{\belong{\texttt{node,\texttt{Bd}}}}{
-    \KwRet{(\texttt{visited} $\cup$ \texttt{node},\texttt{in\_bf} ,\texttt{in\_border}$\cup$ \texttt{node})}
-    }
-    {
-      \texttt{visited\_already} = \texttt{node} $\cup$ \texttt{visited}\;
-      \texttt{in\_bf\_already} = \texttt{in\_bf}\;				
-      \texttt{in\_border\_already} = \texttt{in\_border}\;
-      \For{\texttt{pere} $\in$ \pred{\texttt{Ancestor},\texttt{node}}}{
-      \If{\texttt{pere} $\notin$ \texttt{explored}}
-      {
-	\texttt{visited\_already,in\_bf\_already,in\_border\_already} = \explore{\texttt{pere},\texttt{visited\_already},\texttt{in\_bf\_already},\texttt{in\_border\_already}}\;
-      }
-      }
-      \KwRet{(\texttt{visited\_already},\texttt{in\_bf\_already},\texttt{in\_border\_already})}\;
-    }	
-  }
-}
-
-\SetKwFunction{bf}{\textbf{find\_in\_bf}}
-\SetKwFunction{bd}{\textbf{find\_in\_border}}
-\myproc{\bf{\texttt{node},\texttt{explored}}}{
-    \addv{\texttt{G\_In},\texttt{node}}\;
-    \texttt{already\_explored} = \texttt{explored} $\cup$ \texttt{node}\;
-    \For{\texttt{fils} $\in$ \succ{\texttt{Ancestor},\texttt{node}}}{
-      \adde{\texttt{G\_In},\texttt{node},\texttt{fils}}\;
-      \If{$\texttt{fils} \notin \texttt{already\_explored} \wedge \texttt{fils} \notin \texttt{G\_In}$}{
-	\texttt{already\_explored} = \bf{\texttt{fils},\texttt{already\_explored}}
-	}
-    }
-    \KwRet{already\_explored}
-}
-
-\myproc{\bd{\texttt{node},\texttt{explored},\texttt{to\_further\_explore}}}{
-  \If{$\texttt{node} \notin \texttt{explored}$}{
-    \texttt{son\_in} = $\varnothing$\;
-    \texttt{son\_out} = $\varnothing$\;
-    \For{\texttt{fils} $\in$ \succ{\texttt{Ancestor},\texttt{node}}}{
-      \eIf{\texttt{fils} $\in$ \texttt{G\_In}}{
-	\texttt{son\_in} = \texttt{fils} $\cup$ \texttt{son\_in}\; 
-      }{
-	\texttt{son\_out} = \texttt{fils} $\cup$ \texttt{son\_out}\;
-      }
-    }
-    \texttt{already\_explored} = \texttt{explored}\;
-    \texttt{inter\_node} = \texttt{to\_further\_explore}\;
-    \If{\texttt{son\_in} = $\varnothing$}{
-      \texttt{inter\_node} = \texttt{node} $\cup$ \texttt{inter\_node}\;
-    }
-    \For{\texttt{fils} $\in$ \texttt{son\_out}}{
-      \If{\texttt{fils} $\notin$ \texttt{already\_explored}}{
-	\texttt{already\_explored},\texttt{inter\_node} = \bd{\texttt{fils},\texttt{already\_explored},\texttt{inter\_node}}\;
-      }
-    }
-    \KwRet{(already\_explored,inter\_node)}\;
-  }
-}
-\end{algorithm}
-  \begin{algorithm}
-  \SetAlgoLined
-  \caption{Finding some of the ancestors of $Alice$ not known by $Bob$}
-  \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
-  \SetKwComment{tcc}{(*}{*)}
-  \KwData{\texttt{Alice\_Heads} : some nodes in the history of $Alice$, \texttt{Ancestor} : a dag of the ancesters of $Alice$, \texttt{G\_In} : a graph of ancestors of $Alice$ not known by $Bob$, \texttt{Bf} : The Bloom filter of $Bob$, \texttt{Bd} : The Border of $Bob$}
-%   \KwData{
-%     \begin{itemize}
-%     \item \texttt{Alice\_Heads} : some nodes in the history of $Alice$
-%     \item \texttt{Ancestor} : a dag of the ancesters of $Alice$
-%     \item \texttt{G\_In} : a graph of ancestors of $Alice$ not known by $Bob$
-%     \item \texttt{Bf} : The Bloom filter of $Bob$
-%     \item \texttt{Bd} : The Border of $Bob$
-%     \end{itemize}
+%   {
+%     \eIf{\belong{\texttt{node,\texttt{Bd}}}}{
+%     \KwRet{(\texttt{visited} $\cup$ \texttt{node},\texttt{in\_bf} ,\texttt{in\_border}$\cup$ \texttt{node})}
 %     }
-  \KwResult{\texttt{G\_Out} : a graph of ancestors of $Alice$ not known by $Bob$, \texttt{node\_to\_check} : a list of ancestors of $Alice$ that shall be revisited with the next Bloomfilters}
-%   \KwResult{
-%   \begin{itemize}
-%   \item \texttt{G\_Out} : a graph of ancestors of $Alice$ not known by $Bob$
-%   \item \texttt{node\_to\_check} : a list of ancestors of $Alice$ that shall be revisited with the next Bloomfilters
-%   \end{itemize}
+%     {
+%       \texttt{visited\_already} = \texttt{node} $\cup$ \texttt{visited}\;
+%       \texttt{in\_bf\_already} = \texttt{in\_bf}\;				
+%       \texttt{in\_border\_already} = \texttt{in\_border}\;
+%       \For{\texttt{pere} $\in$ \pred{\texttt{Ancestor},\texttt{node}}}{
+%       \If{\texttt{pere} $\notin$ \texttt{explored}}
+%       {
+% 	\texttt{visited\_already,in\_bf\_already,in\_border\_already} = \explore{\texttt{pere},\texttt{visited\_already},\texttt{in\_bf\_already},\texttt{in\_border\_already}}\;
+%       }
+%       }
+%       \KwRet{(\texttt{visited\_already},\texttt{in\_bf\_already},\texttt{in\_border\_already})}\;
+%     }	
 %   }
-  
-\SetAlgoLined\DontPrintSemicolon
-
-  \texttt{explored} = $\varnothing$\;
-  \texttt{in\_bf} = $\varnothing$\;
-  \texttt{in\_border} = $\varnothing$\;
-  \texttt{to\_further\_explore} = $\varnothing$\;
-\SetKwFunction{explore}{\textbf{explore}}
-\SetKwFunction{belong}{\textbf{belong}}
-\SetKwFunction{addv}{\textbf{add\_vertex}}
-\SetKwFunction{adde}{\textbf{add\_edge}}
-\SetKwFunction{succ}{\textbf{successor}}
-\SetKwFunction{pred}{\textbf{predecessor}}
-\SetKwProg{myproc}{Procedure}{}{}
-\myproc{\explore{\texttt{node}}}{
-
-\If{\texttt{node} $\notin$ \texttt{explored}}
-{
-\texttt{explored} = \texttt{node} $\cup$ \texttt{explored}\;
-\eIf{\belong{\texttt{node,\texttt{Bf}}}}{
-  \texttt{in\_bf} = \texttt{node} $\cup$ \texttt{in\_bf}\;
-  }
-  {
-  \eIf{\belong{\texttt{node,\texttt{Bd}}}}{
-  \texttt{in\_border} = \texttt{node} $\cup$ \texttt{in\_border}\;
-  }
-  {
-  \For{\texttt{pere} $\in$ \pred{\texttt{Ancestor},\texttt{node}}}{
-    \explore{\texttt{pere}}
-  }
-  }
-  }
-}
-}
-\SetKwFunction{bf}{\textbf{find\_in\_bf}}
-\SetKwFunction{bd}{\textbf{find\_in\_border}}
-\myproc{\bf{\texttt{node}}}{
-  \If{$\texttt{node} \notin \texttt{explored} \wedge \texttt{node} \notin \texttt{G\_In}$}{
-    \addv{\texttt{G\_In},\texttt{node}}\;
-    \For{\texttt{fils} $\in$ \succ{\texttt{Ancestor},\texttt{node}}}{
-      \adde{\texttt{G\_In},\texttt{node},\texttt{fils}}\;
-      \bf{\texttt{fils}}
-    }
-  }
-}
-\myproc{\bd{\texttt{node}}}{
-  \If{$\texttt{node} \notin \texttt{explored}$}{
-    \eIf{$\texttt{node} \in \texttt{G\_In}$}{
-      \texttt{to\_further\_explore} = \texttt{node} $\cup$ \texttt{to\_further\_explore}\;
-    }
-    {
-      \For{\texttt{fils} $\in$ \succ{\texttt{Ancestor},\texttt{node}}}{
-      \bd{\texttt{fils}}
-      }    
-    }
-  }
-}
-\For{\texttt{node} $\in$ \texttt{Alice\_Heads}}{
-  \explore{\texttt{node}}
-}
-\texttt{explored} = $\varnothing$\;
-\For{\texttt{node} $\in$ \texttt{in\_bf}}{
-  \bf{\texttt{node}}
-}
-\texttt{explored} = $\varnothing$\;
-\For{\texttt{node} $\in$ \texttt{in\_border}}{
-  \bd{\texttt{node}}
-}
-\KwRet{(\texttt{G\_In,to\_further\_explore})}
-  
-  \end{algorithm}
+% }
+% 
+% \SetKwFunction{bf}{\textbf{find\_in\_bf}}
+% \SetKwFunction{bd}{\textbf{find\_in\_border}}
+% \myproc{\bf{\texttt{node},\texttt{explored}}}{
+%     \addv{\texttt{G\_In},\texttt{node}}\;
+%     \texttt{already\_explored} = \texttt{explored} $\cup$ \texttt{node}\;
+%     \For{\texttt{fils} $\in$ \succ{\texttt{Ancestor},\texttt{node}}}{
+%       \adde{\texttt{G\_In},\texttt{node},\texttt{fils}}\;
+%       \If{$\texttt{fils} \notin \texttt{already\_explored} \wedge \texttt{fils} \notin \texttt{G\_In}$}{
+% 	\texttt{already\_explored} = \bf{\texttt{fils},\texttt{already\_explored}}
+% 	}
+%     }
+%     \KwRet{already\_explored}
+% }
+% 
+% \myproc{\bd{\texttt{node},\texttt{explored},\texttt{to\_further\_explore}}}{
+%   \If{$\texttt{node} \notin \texttt{explored}$}{
+%     \texttt{son\_in} = $\varnothing$\;
+%     \texttt{son\_out} = $\varnothing$\;
+%     \For{\texttt{fils} $\in$ \succ{\texttt{Ancestor},\texttt{node}}}{
+%       \eIf{\texttt{fils} $\in$ \texttt{G\_In}}{
+% 	\texttt{son\_in} = \texttt{fils} $\cup$ \texttt{son\_in}\; 
+%       }{
+% 	\texttt{son\_out} = \texttt{fils} $\cup$ \texttt{son\_out}\;
+%       }
+%     }
+%     \texttt{already\_explored} = \texttt{explored}\;
+%     \texttt{inter\_node} = \texttt{to\_further\_explore}\;
+%     \If{\texttt{son\_in} = $\varnothing$}{
+%       \texttt{inter\_node} = \texttt{node} $\cup$ \texttt{inter\_node}\;
+%     }
+%     \For{\texttt{fils} $\in$ \texttt{son\_out}}{
+%       \If{\texttt{fils} $\notin$ \texttt{already\_explored}}{
+% 	\texttt{already\_explored},\texttt{inter\_node} = \bd{\texttt{fils},\texttt{already\_explored},\texttt{inter\_node}}\;
+%       }
+%     }
+%     \KwRet{(already\_explored,inter\_node)}\;
+%   }
+% }
+% \end{algorithm}
   
   \begin{figure}[H]
   \begin{minipage}{0.3\textwidth}
