@@ -2,6 +2,7 @@ module Make (H : Hash.HashSig with type u = string array) =
   struct
     type t = H.t
     type u = string array
+    let name = H.name
     let nb_max = 200
     let add_char c1 c2 = 
       let aux = Array.make 8 0 in

@@ -96,6 +96,9 @@ decorate, decoration={
 \input{caml.tex}
 \begin{document}
 \maketitle
+\begin{abstract}
+Mirage is a database designed to run in distributed, decentralised settings. Mirage gives the user the same primitive as distributed version control systems. This report details the design of a merge algorithm which enables an unknown number of processes doing commits to merge their history. The detailed algorithm produces a small (compared to the size of the history) exchange of information between a client and a server, the algorithm enables the server to be memory free regarding a particular client.
+\end{abstract}
 \tableofcontents
 % \begin{lstlisting}
 % 
@@ -115,7 +118,8 @@ decorate, decoration={
 \input{algo.tex}
 \subsection{The False-positive case}
 \input{fp.tex}
-\subsection{}
+\subsection{Assymptotic behaviour}
+\input{asymptot.tex}
 \section{Hash Functions}
 \input{hash.tex}
 \section{Evaluation}
@@ -141,7 +145,6 @@ decorate, decoration={
 % Rajoute des Figures~\ref{xxx} a chaque fois que tu cites une figure (c'est valable dans tout le document)
 % prop1 et 2: rajoute des références (et/ou des preuves)
  
-% p5: Figure 2.2 mettre plus d'info dans les captions: dire que 1 est le "tip" d'Alice et 6 est le "tip" de Bob
 
 % dire qu'on peut écrire BF plutôt que Bloom filter et l'utiliser dans le rapport
 %

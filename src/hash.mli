@@ -4,6 +4,7 @@ sig
   type u
   (** type t is the type of the element we want to hash *)
   type t
+  val name : t -> string
   val size : int
   val size_hash : int
   val create : unit -> u

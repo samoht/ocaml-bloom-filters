@@ -4,6 +4,7 @@ sig
   type t
   (** type u is the type of the storage that are used *)
   type u
+  val name : t -> string
   val nb_max : int
   (** [merge lu lt] is a function that computes the union of storages
       and add some new data where [lu] is the storages we want to unite
@@ -41,7 +42,7 @@ sig
       of the union of nodes where [s] was the state of the first nodes and
       [f] is the callback function and [hd] is the next node to be added
       to the state *)
-  val increase_width : t -> ( D.u -> D.u -> B.V.t list -> (B.V.t list * B.t)) -> B.V.t -> t
+  val increase_width : t -> ( D.u -> D.u -> B.V.t list -> (B.V.t list * B.t)) -> B.V.t -> t * int
 
 end
       

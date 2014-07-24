@@ -2,16 +2,19 @@ module type HashSig =
 sig
   type u
   type t
+  val name : t -> string
   val size : int
   val size_hash : int
   val create : unit -> u
   val print_compte : unit -> unit
+
   val h : u -> t -> unit
 end
 module Hash_multi  =
 struct
   type u = string array
   type t = string
+  let name t = t
   let size = 20;;
 
   let size_hash = 320
@@ -131,6 +134,7 @@ module Hash_magnus =
 struct
   type u = string array
   type t = string
+  let name t = t
   let size = 20
   let size_hash = 320
   let create () = 

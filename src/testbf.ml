@@ -25,7 +25,127 @@ struct
   type t = string
   let equal = (=)
 end
+let is_char_in_string_n m c s =
+  let n = String.length s in
+  let i = ref 0 in
+  let j = ref 0 in
+  while (!i < n && !j < m) do (if (s.[!i] = c) then incr j ; incr i) done;
+  (!j = m)
+;;
+let hexa_to_binaire_char c s i = match c with
+  |'0' -> s.[i] <- '0';s.[i+1] <- '0';s.[i+2] <-'0';s.[i+3] <- '0' 
+  |'1' -> s.[i] <- '0';s.[i+1] <- '0';s.[i+2] <-'0';s.[i+3] <- '1' 
+  |'2' -> s.[i] <- '0';s.[i+1] <- '0';s.[i+2] <-'1';s.[i+3] <- '0' 
+  |'3' -> s.[i] <- '0';s.[i+1] <- '0';s.[i+2] <-'1';s.[i+3] <- '1' 
+  |'4' -> s.[i] <- '0';s.[i+1] <- '1';s.[i+2] <-'0';s.[i+3] <- '0' 
+  |'5' -> s.[i] <- '0';s.[i+1] <- '1';s.[i+2] <-'0';s.[i+3] <- '1' 
+  |'6' -> s.[i] <- '0';s.[i+1] <- '1';s.[i+2] <-'1';s.[i+3] <- '0' 
+  |'7' -> s.[i] <- '0';s.[i+1] <- '1';s.[i+2] <-'1';s.[i+3] <- '1' 
+  |'8' -> s.[i] <- '1';s.[i+1] <- '0';s.[i+2] <-'0';s.[i+3] <- '0' 
+  |'9' -> s.[i] <- '1';s.[i+1] <- '0';s.[i+2] <-'0';s.[i+3] <- '1' 
+  |'a' -> s.[i] <- '1';s.[i+1] <- '0';s.[i+2] <-'1';s.[i+3] <- '0' 
+  |'b' -> s.[i] <- '1';s.[i+1] <- '0';s.[i+2] <-'1';s.[i+3] <- '1' 
+  |'c' -> s.[i] <- '1';s.[i+1] <- '1';s.[i+2] <-'0';s.[i+3] <- '0' 
+  |'d' -> s.[i] <- '1';s.[i+1] <- '1';s.[i+2] <-'0';s.[i+3] <- '1' 
+  |'e' -> s.[i] <- '1';s.[i+1] <- '1';s.[i+2] <-'1';s.[i+3] <- '0' 
+  |'f' -> s.[i] <- '1';s.[i+1] <- '1';s.[i+2] <-'1';s.[i+3] <- '1' 
+  |'A' -> s.[i] <- '1';s.[i+1] <- '0';s.[i+2] <-'1';s.[i+3] <- '0' 
+  |'B' -> s.[i] <- '1';s.[i+1] <- '0';s.[i+2] <-'1';s.[i+3] <- '1' 
+  |'C' -> s.[i] <- '1';s.[i+1] <- '1';s.[i+2] <-'0';s.[i+3] <- '0' 
+  |'D' -> s.[i] <- '1';s.[i+1] <- '1';s.[i+2] <-'0';s.[i+3] <- '1' 
+  |'E' -> s.[i] <- '1';s.[i+1] <- '1';s.[i+2] <-'1';s.[i+3] <- '0' 
+  |'F' -> s.[i] <- '1';s.[i+1] <- '1';s.[i+2] <-'1';s.[i+3] <- '1' 
+  |_ -> Printf.printf "char : %c" c ;failwith "pas de l'hexa"
+;;
+let int_to_hexa_c i = 
+  if (i < 10) then
+    char_of_int (48 + i)
+  else
+    char_of_int (97 + i - 10)
+;;
 
+let nb_of_bin s i l =
+  let rep = ref 0 in
+  let compt = ref 1 in
+  for j = (i+l-1) downto i do
+    if (s.[j] = '1') then (rep := !rep + !compt);
+    compt := 2 * !compt
+  done;
+  !rep
+;;
+
+let hexa_to_binaire s = 
+  let n = String.length s in
+  let rep = String.make (4*n) '0' in
+  for i = 0 to (n-1) do
+    hexa_to_binaire_char (s.[i]) rep (4*i)
+  done;
+  rep;;
+
+let binaire_to_hexa s = 
+  let n = String.length s in
+  let p = (n/4) in
+  let m = if (n mod 4 <> 0) then (failwith "pas un multiple de 4") else p in
+  let rep = String.make m '0' in
+  for i = 0 to (m-1) do
+    rep.[i] <- int_to_hexa_c (nb_of_bin s (4*i) 4)
+  done;
+  rep;;
+
+module L = struct
+  open Graph
+  let node (a : Dot_ast.node_id) (b : Dot_ast.attr list) =
+    let tokeep = ref false in
+    let deal_one elem = 
+      let e,f = elem in
+      match e with
+      |Dot_ast.Ident(s) -> 
+	begin
+	  match f with
+	  |Some(sthg) -> 
+	    begin
+	      match sthg with
+	      |Dot_ast.Ident(s) -> ()
+	      |Dot_ast.Number(s) -> ()
+	      |Dot_ast.String(s) -> if (is_char_in_string_n 3 '|' s) then (tokeep := true)
+	      |Dot_ast.Html(s) -> ()
+	    end
+	  |None -> ()
+	end
+       
+      |Dot_ast.Number(s) -> ()
+      |Dot_ast.String(s) -> ()
+      |Dot_ast.Html(s) -> ()
+    in
+    let deal_one_l l = 
+      List.iter deal_one l
+    in
+    List.iter deal_one_l b;
+    if (not (!tokeep)) then "r" else 
+      begin
+	let c,d = a in
+	match c with
+	|Dot_ast.Ident(s) -> hexa_to_binaire s
+	|Dot_ast.Number(s) -> hexa_to_binaire s
+	|Dot_ast.String(s) -> hexa_to_binaire s
+	|Dot_ast.Html(s) -> hexa_to_binaire s
+      end
+
+  let edge l = ()
+end
+module Buildtool = struct 
+  module G = MyGraph
+  let empty = MyGraph.create ~size:10
+  let copy = MyGraph.copy
+  let add_vertex a b = MyGraph.add_vertex a b ; a
+  let add_edge a b c = MyGraph.add_edge a b c ; a
+  let add_edge_e a b = MyGraph.add_edge_e a b ; a
+  let remove_vertex a b = MyGraph.remove_vertex a b ; a
+  let remove_edge a b c = MyGraph.remove_edge a b c ; a
+  let remove_edge_e a b = MyGraph.remove_edge_e a b ; a 
+end
+
+module MyParsor = Graph.Dot.Parse(Buildtool)(L);;
 
 let rec remove e l = match l with
   |p::q -> if (e = p) then q else (p::(remove e q))
@@ -80,6 +200,7 @@ struct
     in
     let anl = ancl l [] in
     let a,b = Truc.next_ring l anl bf bd in
+
     b,a
   let fstate node = Hashtbl.find known node
   let astate node state = Hashtbl.add known node state
@@ -91,14 +212,65 @@ let rec split l a1 a2 = match l with
   |[] -> (a1,a2)
 ;;
 
+let one_head g = 
+  let size = ref (-1) in
+  let biggest = ref [] in
+  let parcours node = 
+    if (!size = -1) then (size := String.length node);
+    if (MyGraph.pred g node = []) then (biggest := (node) :: !biggest);
+  in
+  MyGraph.iter_vertex parcours g;
+  if (!size = -1) then
+    ""
+  else
+    begin
+      match (!biggest) with
+      |p::[] ->
+	begin
+	  p
+	end
+      |p::q::r -> 
+	begin
+	  let sol = String.make (!size) '0' in
+	  MyGraph.add_vertex g sol;
+	  List.iter (fun x -> MyGraph.add_edge g sol x) (!biggest);
+	  sol
+	end
+      |[] ->
+	failwith "pas un dag"
+    end
+;;
+module ToDot = 
+struct
+   include MyGraph 
+   let edge_attributes (a, b) = []
+   let default_edge_attributes _ = []
+   let get_subgraph _ = None
+   let vertex_attributes v = 
+     if ((binaire_to_hexa v) <> "cf8501e942f0420dde836ac8646b777839216c65d") then [`Shape `Box]
+     else (Printf.printf "FOUND" ; [`Fillcolor(125);`Shape `Circle])
+   let vertex_name v =
+     if (String.length v mod 4 = 0) then
+       binaire_to_hexa v
+     else
+       v
+   let default_vertex_attributes _ = []
+  let graph_attributes _ = []
+end;;
+
+module MyDot = Graph.Graphviz.Dot(ToDot);;
 
 let simule2 g beg =
   let left_before = Hashtbl.create 10 in
   let tovisite = ref [beg] in
   let visited = Hashtbl.create 10 in
   let bf_merge_aux = ref "" in
-
+  let moyenne = ref 0 in
+  let nb_tot = ref 0 in
+  let truenb = ref 0 in
   let visite node = 
+    incr truenb;
+    Printf.printf "%d visiting %s\n" (!truenb) (binaire_to_hexa node);
     let peres = MyGraph.pred g node in
     if (peres <> [])  then 
       begin
@@ -107,7 +279,10 @@ let simule2 g beg =
 	let rec width l = match l with
 	  |p::q -> 
 	    begin
-	      state_fin := Truc.increase_width (!state_fin) Database.f p;
+	      incr nb_tot;
+	      let newst,nb_turn = Truc.increase_width (!state_fin) Database.f p in
+	      state_fin := newst;
+	      moyenne := !moyenne + nb_turn;
 	      width q
 	    end
 	  |[] -> state_fin := Truc.increase_high (!state_fin) peres node
@@ -149,7 +324,9 @@ let simule2 g beg =
 	Hashtbl.add visited p true;
 	visite p;
       end
-  done;;
+  done;
+  (float_of_int !moyenne) /. (float_of_int !nb_tot)
+;;
 (*
 let simule g beg =
 
@@ -345,12 +522,61 @@ let max_l l =
   aux l;
   !rep;;
 
+
+let iter_graphe_from_high f g start =
+  let visited_up = Hashtbl.create 10 in
+  let to_visite = ref [] in
+  let rec go_up node = 
+    if Hashtbl.mem visited_up node then 
+      ()
+    else
+      begin
+	Hashtbl.add visited_up node true;
+	if (MyGraph.pred g node = []) then
+	  to_visite := node :: !to_visite
+	else
+	  (MyGraph.iter_pred go_up g node)
+      end
+  in
+  go_up start;
+  let visited_down = Hashtbl.create 10 in
+  let pred = Hashtbl.create 10 in
+  let visite_node node = 
+    if Hashtbl.mem visited_down node then
+      ()
+    else
+      begin
+	Hashtbl.add visited_down node true;
+	f node;
+	let deal_with_son son = 
+	  if Hashtbl.mem pred son then
+	    begin
+	      let l = remove node (Hashtbl.find pred son) in
+	      if l = [] then (to_visite := son :: !to_visite);
+	      Hashtbl.replace pred son l
+	    end
+	  else 
+	    begin
+	      let l = remove node (MyGraph.pred g son) in
+	      if l = [] then (to_visite := son :: !to_visite);
+	      Hashtbl.replace pred son l
+	    end
+	in
+	MyGraph.iter_succ deal_with_son g node
+      end
+      in
+  while (!to_visite <> []) do
+    let p::q = !to_visite in
+    to_visite := q;
+    visite_node p
+  done;;
+
 let main () = 
-  let size_graphe = 10000 in 
-  let prof_max = 8000 in 
+  let size_graphe = 1000 in 
+  let prof_max = 800 in 
   let nb_test = "100" in
   let g,hd = DagGen.alea size_graphe prof_max 160 0 0.5 in
-  let () = simule2 g hd in
+  let n = simule2 g hd in
   Hash.Hash_magnus.print_compte ();
   
   let state_h = Database.known in
@@ -436,6 +662,58 @@ let main () =
     end
 ;;
 
+let main0 () = 
+  let g = MyParsor.parse "./testdot/foopgl.dot" in
+  Printf.printf "Input OK\n";
+  MyGraph.remove_vertex g "r";
+  let tete = one_head g in
+  Printf.printf "Removing useless state OK\n";
+
+  Printf.printf "Finding an head OK\n";
+  let file = open_out_bin ("test.dot") in
+  MyDot.output_graph file g;
+  let f = simule2 g tete in
+  Printf.printf "%f\n" f;
+  let nb = ref 0 in
+  let state_h = Database.known in
+  let rep = Hashtbl.create 10 in
+  let iter_on_graph a = 
+    Printf.printf "[BUILDING ANCESTORS] %d/%d %s\n" (!nb) 1000 a;
+    incr nb;
+    Hashtbl.add rep a (ancetre g a) 
+  in
+  
+  MyGraph.iter_vertex iter_on_graph g;
+  nb:= 0;
+  let repbool = ref true in
+  let test_egal k v = 
+    Printf.printf "[CHECKING ANCESTORS] %d/%d %s\n" (!nb) 1000 k;
+    flush stdout;
+    incr nb;
+    let test = egale v (Truc.get_ancestor (Hashtbl.find state_h k)) in
+    if (not test) then (Printf.printf "[CHECKING FAILED] %s\n" k);
+    repbool := ((!repbool) && test) 
+  in
+  let test_egal2 k =
+    Printf.printf "[CHECKING ANCESTORS] %d/%d %s\n" (!nb) 1000 (binaire_to_hexa k);
+    flush stdout;
+    incr nb;
+    let test = egale (Hashtbl.find rep k) (Truc.get_ancestor (Hashtbl.find state_h k)) in
+    if (not test) then (
+      let file = open_out_bin ("true.dot") in
+      MyDot.output_graph file (Hashtbl.find rep k);
+
+      let file2 = open_out_bin ("false.dot") in
+      MyDot.output_graph file2 (Truc.get_ancestor (Hashtbl.find state_h k));
+      Printf.printf "[CHECKING FAILED] %s\n" k;
+      failwith "failed";
+    );
+    repbool := ((!repbool) && test) 
+  in
+  (*Hashtbl.iter (test_egal) rep;*)
+  iter_graphe_from_high (test_egal2) g tete;
+  Printf.printf "Test Ancetre : %s\n" (if (!repbool) then "[OK]" else "[FAIL]");
+  flush stdout;;
 
 let binaire_char c = 
   let aux = String.make 8 '0' in
@@ -705,5 +983,5 @@ let main4 () =
     close_out coutnum;
   done;;
 
-main4();
+main0 ();;
     
