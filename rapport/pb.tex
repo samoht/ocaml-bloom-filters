@@ -1,4 +1,4 @@
-We assume that we have a collection of processes $P_0,\cdots,P_{n-1}$ that can communicate by exchanging messages. In our work we will assume that the processes can do two main actions that are "commiting" and "merging" with an other process. Each of the process $P_i$ is doing a serie of action in a certain total order $\prec_i$, each actions resulting in a new state for the process.
+We assume that we have a collection of processes $P_0,\cdots,P_{n-1}$ that can communicate by exchanging messages. In our work we will assume that the processes can do two main actions that are "commiting" local data and "merging" remote data with an other process. For simplicity, we assume merge is always between 2 processes, we could easily generalise it to $n$-process merge. Each of the process $P_i$ is doing a serie of action in a certain total order $\prec_i$, each actions resulting in a new state for the process.
 
 \begin{figure}[H]
 \centering
@@ -190,14 +190,14 @@ We assume that we have a collection of processes $P_0,\cdots,P_{n-1}$ that can c
 
 \paragraph{} Figures~\ref{fig:21} shows an example with three processes doing commits (C) and Merging with other process ($M(i)$). 
 % This figure shows an underlying partial order between elements as defined by Leslie Lamport (TODO : put reference). 
-\begin{definition} We define the relation $<$ as the smallest relation on the states following the conditions :
+\begin{definition} We define the relation $<$ as the smallest relation on the actions following the conditions :
  \begin{enumerate}
-  \item If $a$ and $b$ are two states of the same process $P_i$ and $a \prec_i b$ then $a < b$
+  \item If $a$ and $b$ are two actions of the same process $P_i$ and $a \prec_i b$ then $a < b$
   \item If $b$ is a merge state and $a$ is the state from which the merge occured on another process then $a<b$
   \item If $a< b$ and $b<c$ then $a<c$ 
  \end{enumerate}
 \end{definition}
-In our case we assume the relation $<$ to be a strict partial order, therefore we make the assumption that there is no cycle. We define the set of "Biggest common ancestors of $a$ and $b$" as : $\{c, 
+In our case we assume the relation $<$ to be a strict partial order, ie there is no cycle. We define the set of "Biggest common ancestors of $a$ and $b$" (BCA) as : $\{c, 
 c < a 
 \wedge 
 c < b 
@@ -207,14 +207,14 @@ c < b
 c < d \Rightarrow \left ( d \nless a \vee d \nless b \right )
 \right )
 \}$ see Figure~\ref{fig:22}. This set can be of any size, however Figure~\ref{fig:31} underlines what having two biggest common ancestors mean in term of merging. 
-\paragraph{} Finding the biggest common ancestor(s) is an important problem when two processes want to merge, therefore it is interesting to find a way to discover quickly and without exchanging too many informations between two processes what are the biggest common ancestors of two nodes. For this purpose we label each of the states with a vector of integers of size $n$, $n$ being the total number of processes exchanging information. $\delta_i$ denotes the vector having zeros everywhere except a 1 at the $i$-th position. We build the label of the states in the "$\rightarrow$" order:
+\paragraph{} Finding the biggest common ancestor(s) is an important problem when two processes want to merge, indeed all of their ancestors are ancestors of the two branches whereas all of their successors are not in the history of one of the two branches. Therefore it is interesting to find a way to discover quickly and without exchanging too many informations between two processes what are the biggest common ancestors of two nodes. For this purpose it is a common practive to use vector clock label each of the states with a vector of integers of size $n$, $n$ being the total number of processes exchanging information. $\delta_i$ denotes the vector having zeros everywhere except a 1 at the $i$-th position. We build the label of the states in the "$<$" order:
 \begin{enumerate}
  \item If a state $a$ is a commit state on a process $P_i$ and as no predecessor for the $\prec_i$ relation then $a$ is labeled with $\delta_i$
  \item If a state $a$ is a commit state on a process $P_i$ and it has a biggest predecessor $b$ then $a$ is labeled with $\mathrm{label}(b) + \delta_i$
  \item If a state $a$ is a merge state with a state $b$ and $a$ as no predecessor for the $\prec_i$ relation then $a$ is labeled with $\mathrm{label}(b) + \delta_i$
- \item If a state $a$ is a merge state with a state $b$ and it has a biggest predecessor $c$ then $a$ is labeled with $\mathrm{max}(\mathrm{label}(b),\mathrm{label}(c)) + \delta_i$. Where $\max$ is the max on each component of the vector
+ \item If a state $a$ is a merge state with a state $b$ and it has a biggest predecessor $c$ then $a$ is labeled with $\mathrm{max}(\mathrm{label}(b),\mathrm{label}(c)) + \delta_i$. Where $\max$ is the max on each components of the vector
 \end{enumerate}
-Such a labeling can be seen on Figure~\ref{fig:23}. We define the $\preccurlyeq$ relation on integer vector of size $n$ by : $u \preccurlyeq v \Leftrightarrow \forall i \in \{0,\cdots,n-1\}\  u(i) \leq v(i)$ and $\prec$ defined by $u \prec v \Leftrightarrow u \preccurlyeq v \wedge u \neq v$. We have the following proposition on the labels of the states :
+Such a labeling can be seen on Figure~\ref{fig:23}. We define the $\preccurlyeq$ relation on integer vector of size $n$ by : $u \preccurlyeq v \Leftrightarrow \forall i \in \{0,\cdots,n-1\}\  u(i) \leq v(i)$ and $\prec$ defined by $u \prec v \Leftrightarrow u \preccurlyeq v \wedge u \neq v$. As shown in (TODO) We have the following invariants regarding the labels of the states :
 \begin{proposition}
   \label{prop1}
  $ a < b \Leftrightarrow \mathrm{label}(a) \prec  \mathrm{label}(b)$
@@ -224,8 +224,14 @@ Such a labeling can be seen on Figure~\ref{fig:23}. We define the $\preccurlyeq$
  If $c$ is the only biggest common ancestor of $a$ and $b$ then $\mathrm{label}(c) = \mathrm{min}(\mathrm{label}(a),\mathrm{label}(b))$
 \end{proposition}
 
-These two propositions allow processes to find their common ancestor just by sending the label from one node to another and computing the minimum. Once the biggest common ancestor is found, the difference of history between the two nodes can easily be computed and shared so that one node know the history of the other.
-\paragraph{} In all of the previous remarks we considered the number of processes known and immutable with the time, however in many cases one can not know the number of processes evolving, for example in Git one does not know how many contributors will be part of a project at the end. In cases like Git it is particularly important to compute the biggest common ancestor when trying to merge two different branches, indeed all of their ancestors are ancestors of the two branches whereas all of their successors are not in the history of one of the two branches. In our case we will work on DAGs, with the only constraint that each node has a hashable identifier different from every other nodes. \textbf{Therefore we are working under the assumptions that two nodes can have more than one biggest common ancestor and there can be any number of processes involved}. The next figure gives an example of DAGs we will be considering Figure~\ref{fig:31}, and of the history of two processes Alice (Figure~\ref{fig:32}) and 
+These two propositions allow processes to find their common ancestor just by computing the min with the label received. Once the biggest common ancestor is found, the difference of history between the two nodes can easily be computed and shared so that one node know the history of the other.
+\paragraph{} In all of the previous remarks we considered the total number of processes known in advance, however in many cases it is not the case, for example in Git one does not know how many contributors will be part of a project at the end. In our case we will work on DAGs, with the only constraint that each node has a hashable identifier different from every other nodes. Therefore we are working under the assumptions that : 
+\begin{itemize}
+ \item \textbf{we have DAGs, with the only constraint that each node has a hashable identifier different from every other nodes.}
+ \item \textbf{two nodes can have more than one biggest common ancestor}
+ \item \textbf{there can be any number of processes involved}
+\end{itemize}
+The next figure gives an example of DAGs we will be considering Figure~\ref{fig:31}, and of the history of two processes Alice (Figure~\ref{fig:32}) and 
 Bob (Figure~\ref{fig:33}) that have some history in common.
 
 \begin{figure}[H]
@@ -331,7 +337,7 @@ Bob (Figure~\ref{fig:33}) that have some history in common.
   \path[thin] (a7) edge (a6);
   \path[thin] (a8) edge (a6);
   \end{tikzpicture}
-  \caption{Bob's ancestors, 6 is the head of Alice} \label{fig:33}
+  \caption{Bob's ancestors, 6 is the head of Bob} \label{fig:33}
 \end{subfigure}
 \caption{two processes Alice and Bob that share a part of their history}
 \end{figure}

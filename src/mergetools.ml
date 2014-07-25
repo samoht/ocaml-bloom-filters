@@ -164,22 +164,22 @@ struct
 	      Printf.printf "going up %s\n" (binaire_to_hexa (D.name node)); 
 	      flush stdout;
 	      Hashtbl.add explored node true;
-		let is_in_bf = D.mem node bf in
-		if (is_in_bf) then 
-		  begin
-
-	      Printf.printf "going bf %s\n" (binaire_to_hexa (D.name node)); 
-	      flush stdout;
-		    found_in_bf node ancetre;
-		  end
-		else
+	      let is_in_bf = D.mem node bf in
+	      if (is_in_bf) then 
+		begin
+		  
+		  Printf.printf "going bf %s\n" (binaire_to_hexa (D.name node)); 
+		  flush stdout;
+		  found_in_bf node ancetre;
+		end
+	      else
 		  begin
 		    let is_in_border = D.mem node border in
 		    if (is_in_border) then 
 		      begin
-
-	      Printf.printf "going bd %s\n" (binaire_to_hexa (D.name node)); 
-	      flush stdout;
+			
+			Printf.printf "going bd %s\n" (binaire_to_hexa (D.name node)); 
+			flush stdout;
 			found_in_border node ancetre
 		      end
 	            else 
@@ -187,28 +187,28 @@ struct
 			B.iter_pred (fun x -> explore_one false x ancetre) (ancetre) node;
 		      end
 		  end
-	      end
-	  end
-	else 
-	  begin
-	    if (Hashtbl.mem explored node) then
-	      ()
-	    else
+	    end
+	end
+      else 
+	begin
+	  if (Hashtbl.mem explored node) then
+	    ()
+	  else
 	      begin
 		if (B.mem_vertex g node) then 
 		  ()
 		else
 		  begin
-
-	      Printf.printf "going up %s\n" (binaire_to_hexa (D.name node)); 
-	      flush stdout;
+		    
+		    Printf.printf "going up %s\n" (binaire_to_hexa (D.name node)); 
+		    flush stdout;
 		    Hashtbl.add explored node true;
 		    let is_in_bf = D.mem node bf in
 		    if (is_in_bf) then 
 		      begin
-
-	      Printf.printf "going bf %s\n" (binaire_to_hexa (D.name node)); 
-	      flush stdout;
+			
+			Printf.printf "going bf %s\n" (binaire_to_hexa (D.name node)); 
+			flush stdout;
 			found_in_bf node ancetre
 		      end
 		    else
@@ -216,9 +216,9 @@ struct
 			let is_in_border = D.mem node border in
 			if (is_in_border) then 
 			  begin
-
-	      Printf.printf "going bd %s\n" (binaire_to_hexa (D.name node)); 
-	      flush stdout;
+			    
+			    Printf.printf "going bd %s\n" (binaire_to_hexa (D.name node)); 
+			    flush stdout;
 			    found_in_border node ancetre
 			  end
 			else 
@@ -228,32 +228,32 @@ struct
 		      end
 		  end
 	      end
-	  end
-      and found_in_bf node ancetre = 
-	in_bf := (node,ancetre) :: (!in_bf);
-      and found_in_border node ancetre = 
-	in_border := (node,ancetre) :: (!in_border);
-      in
-      let rec fst_rec a b = match a,b with
-	|p::q,t::r -> explore_one true p t; fst_rec q r
-	|[],[] -> ()
+	end
+    and found_in_bf node ancetre = 
+      in_bf := (node,ancetre) :: (!in_bf);
+    and found_in_border node ancetre = 
+      in_border := (node,ancetre) :: (!in_border);
+    in
+    let rec fst_rec a b = match a,b with
+      |p::q,t::r -> explore_one true p t; fst_rec q r
+      |[],[] -> ()
 	|_-> failwith "pas le même nombre"
-      in
+    in
       fst_rec node_list ancestor_list;
-
-      let rec deal_with_bf node ancetre = 
-	if Hashtbl.mem explored_down node then () else
-	  begin
-	    Hashtbl.add explored_down node true;
-	    B.add_vertex g node;
-	    let add_edges_with_son son = 
-	      B.add_edge g node son
+    
+    let rec deal_with_bf node ancetre = 
+      if Hashtbl.mem explored_down node then () else
+	begin
+	  Hashtbl.add explored_down node true;
+	  B.add_vertex g node;
+	  let add_edges_with_son son = 
+	    B.add_edge g node son
 	    in
-	    B.iter_succ add_edges_with_son (ancetre) node;
-	    B.iter_succ (fun x -> deal_with_bf x ancetre) (ancetre) node
-	  end
-      in
-      let mark_down = Hashtbl.create 10 in
+	  B.iter_succ add_edges_with_son (ancetre) node;
+	  B.iter_succ (fun x -> deal_with_bf x ancetre) (ancetre) node
+	end
+    in
+    let mark_down = Hashtbl.create 10 in
       let rec deal_with_border (node) ancetre = 
 	if Hashtbl.mem mark_down node then
 	  ()
@@ -476,6 +476,7 @@ struct
       let nb_turn = ref 0 in
       while (!keep_going) do
 	incr nb_turn;
+	Printf.printf "Tour : %d\n" (!nb_turn);
 	match (!bf) with
 	|(a,p)::q -> 
 	  begin
@@ -483,7 +484,9 @@ struct
 	    match (!border_l_ref) with
 	    |t::r -> 
 	      begin
-		let lretour,couronne = f p border (!interest) in 
+		
+		let lretour,couronne = f p (D.merge (!border_l_ref) []) (!interest) in 
+		border_l_ref := r;
 		unif_graphe graph_rep couronne;
 		if (lretour = []) then
 		  keep_going := false

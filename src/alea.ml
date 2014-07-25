@@ -252,7 +252,7 @@ module L = struct
 end
 
 module Buildtest = struct
-  module G = MyGraph
+  module G = MDGraph
   let empty = MyGraph.create ~size:10
   let copy = MyGraph.copy
   let add_vertex a b = MyGraph.add_vertex a b 
@@ -264,17 +264,6 @@ module Buildtest = struct
   let copy g = MyGraph.copy g
 end
   
-module Buildtool = struct 
-  module G = MyGraph
-  let empty = MyGraph.create ~size:10
-  let copy = MyGraph.copy
-  let add_vertex a b = MyGraph.add_vertex a b ; a
-  let add_edge a b c = MyGraph.add_edge a b c ; a
-  let add_edge_e a b = MyGraph.add_edge_e a b ; a
-  let remove_vertex a b = MyGraph.remove_vertex a b ; a
-  let remove_edge a b c = MyGraph.remove_edge a b c ; a
-  let remove_edge_e a b = MyGraph.remove_edge_e a b ; a 
-end
 
 module MyParsor = Dot.Parse(MyGraph)(L);;
 *)

@@ -18,7 +18,7 @@ module Bf = Bloomfilter.Make(Hash.Hash_magnus);;
 module Bf2 = Bloomfilter.Make(Hash.Hash_multi);;
 
 module DagGen = Alea.Make(MyGraph)(Alea.StringElem)
-module Truc = Mergetools.Make(MyGraph)(Bf)
+module Truc = Mergetools.Make(MyGraph)(Bf2)
 
 module ToSet = 
 struct
@@ -247,7 +247,7 @@ struct
    let default_edge_attributes _ = []
    let get_subgraph _ = None
    let vertex_attributes v = 
-     if ((binaire_to_hexa v) <> "cf8501e942f0420dde836ac8646b777839216c65d") then [`Shape `Box]
+     if ((binaire_to_hexa v) <> "c2c6803c67bf13018c08a1854ca95a2e8511f1372") then [`Shape `Box]
      else (Printf.printf "FOUND" ; [`Fillcolor(125);`Shape `Circle])
    let vertex_name v =
      if (String.length v mod 4 = 0) then
@@ -941,7 +941,7 @@ let is_under a b n=
 let find_under min h =
   let rep = ref 0 in
   let deal_with_one key value =
-    if (is_under min value 160) then (incr rep)
+    if (is_under value min 160) then (incr rep)
   in
   Hashtbl.iter deal_with_one h;
   !rep;;
@@ -957,31 +957,31 @@ let main4 () =
   
   for k = 1 to 8 do
   
-    let coutbca = open_out ("resultprem/bca"^(string_of_int k)) in
+    (*let coutbca = open_out ("resultprem/bca"^(string_of_int k)) in*)
     let coutnum = open_out ("resultprem/num"^(string_of_int k)) in
     for p = 1 to 10 do
       let g,b = DagGen.alea 100 (k*10) 160 0 ((float_of_int p)/.10.) in
       let htbl = compute_old_bf g 160 in
       let num = ref 0 in
-      let nbc = ref 0 in
+      (*let nbc = ref 0 in*)
       let compt = ref 0 in
       let deal_with_couple a b =
 	if (!compt mod 100 = 0) then (Printf.printf "[Computing BCA and NUM] %d/100 \n" (!compt/100); flush stdout;);
 	incr compt;
 	let m = compute_min (Hashtbl.find htbl a) (Hashtbl.find htbl b) 160 in
 	let nb_under_min = find_under m htbl in
-	let nb_bca= compute_bca g a b in
+	(*let nb_bca= compute_bca g a b in*)
 	num := !num + nb_under_min;
-	nbc := !nbc + nb_bca;
+	(*nbc := !nbc + nb_bca;*)
       in
       MyGraph.iter_vertex (fun x -> (MyGraph.iter_vertex (fun y -> deal_with_couple x y) g)) g;
       Printf.printf "%d %d\n" k p;
-      Printf.fprintf coutbca "%f %f\n" (float_of_int p /. 10.) (float_of_int (!nbc) /. 10000.);
+      (*Printf.fprintf coutbca "%f %f\n" (float_of_int p /. 10.) (float_of_int (!nbc) /. 10000.);*)
       Printf.fprintf coutnum "%f %f\n" (float_of_int p /. 10.) (float_of_int (!num) /. 10000.);
     done;
-    close_out coutbca;
+    (*close_out coutbca;*)
     close_out coutnum;
   done;;
 
-main0 ();;
+main4 ();;
     

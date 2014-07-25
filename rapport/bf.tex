@@ -1,13 +1,12 @@
-A Bloom filter is a space-efficient probabilistic data structure that was conceived in 1970 by Burton Howard Bloom. This data structure is particularly efficient for adding an element or testing wether an element is in a set or not. This efficiency is at the cost of having some false positive but no false negative in the membership test. Here we will present the Bloom filters as they were used during my internship, however a lot of different variations have been used on Bloom filters (TODO Mettre ref). Let us consider a set $S' = \{x_0,\cdots,x_{n-1}\} \subset S$, we assume moreover that we have $k$ hash functions $\{h_0,\cdots,h_{k-1}\}$ from $S$ to $\{0,\cdots,m-1\}$ and a matrix $T$ of size $k \times m$ bits initially to zero. To store $S$ in our table, we change the table so that : 
-
-\begin{equation}
+A Bloom filter (BF) is a space-efficient probabilistic data structure that was conceived in 1970 by Burton Howard Bloom (ref TODO). This data structure is particularly efficient for adding an element or testing wether an element is in a set or not. This efficiency is at the cost of having some false positive but no false negative in the membership test. Here we will present the Bloom filters as they were used during my internship, however a lot of different variations have been used on Bloom filters (TODO Mettre ref). Let us consider a set $S$, a subset $S' = \{x_0,\cdots,x_{n-1}\} \subset S$, we assume moreover that we have $k$ hash functions $\mathcal{H}=\{h_0,\cdots,h_{k-1}\}$ from $S$ to $\{0,\cdots,m-1\}$ and a matrix $T$ of size $k \times m$ bits initially to zero. The BF of $S'$ is :
+\begin{equation*}
 T(i)(j) = \left \{ 
 \begin{tabular}{c l} 
 $1$ & when $\exists l,\ j = h_i(x_l)$ \\
 0 & elsewhere
 \end{tabular}
 \right .
-\end{equation}
+\end{equation*}
 % \[
 % T(i)(j) = \left \{ \begin{tabular}{c c} 1 
 %                     &
@@ -19,7 +18,7 @@ $1$ & when $\exists l,\ j = h_i(x_l)$ \\
 % 		  \end{tabular}
 % 		  \right
 % \]. 
-To test the membership of $x$ in the Bloom filter we check wether $\forall j \in \{0,\cdots,k-1\},\ T(j)(h_j(x)) = 1$. This test can however raise 
+To test the membership of $x\in S$ in the Bloom filter $T$ we check wether $\forall j \in \{0,\cdots,k-1\},\ T(j)(h_j(x)) = 1$. This test can however raise 
 false positive, as shown on Figure~\ref{fig:fp}.
 \begin{figure}[H]
 \begin{tikzpicture}
@@ -129,12 +128,12 @@ false positive, as shown on Figure~\ref{fig:fp}.
 \end{figure}
 \paragraph{}
 \begin{proposition}
- Under the assumption that the set $\mathcal H$ is a set of size $k$ independant identically distributed hash functions ranging in $\{0,\cdots,m-1\}$, a table $T$ such as described before and a set $S'\subset S$  of size $n$ of elements inserted in $T$, then the probability $\mathbb{P}$ of having a false positive while testing $x \in S'$ is :
+ Under the assumption that the set $\mathcal H$ is a set of size $k$ independant identically distributed hash functions ranging in $\{0,\cdots,m-1\}$, a BF $T$ and a set $S'\subset S$  of size $n$, then the probability $\mathbb{P}$ of having a false positive while testing $x \in S'$ is :
  \[
   \mathbb{P}=\left ( 1 - \left ( 1 - \frac{1}{m} \right )^n \right )^k
  \]
 \end{proposition}
-\begin{proof}
+\begin{proof}(TODO ref)
 With the same notation than in the proposition :
  \begin{align*}
   \mathbb{P} &= \mathbb{P}(\forall j \in \{0,\cdots,k-1\}, T(j)(h_j(x)) = 1)\\
@@ -146,4 +145,3 @@ With the same notation than in the proposition :
     &= \left ( 1- \left ( \frac{m-1}{m} \right )^n \right )^k\\
  \end{align*}
 \end{proof}
-From now on, Bloom Filters will be refered to as BF in the rest of the report.

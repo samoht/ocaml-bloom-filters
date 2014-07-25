@@ -5,7 +5,7 @@ In the following we will consider two DAGs, each with some particular nodes call
  \item There can be no no pre-assumptions on the shape of the graph, because the shape of the global DAG (with multiple head) is evolving in time and is not known at the beginning.
  \item There is no high authority that has a memory of every thing.
 \end{enumerate}
-\paragraph{} The section~\ref{sec:prelim} underlined that we were not able to find a way to compute easily the set of BCA, moreover if the server has to send the difference $\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob)$ then at some point we will have to go all over this difference, therefore we decided that the server could cross the part of its history corresponding to the difference.
+\paragraph{} The section~\ref{sec:prelim} underlined that we were not able to find a way to compute easily the set of BCA, moreover if the server has to send the difference $\mathrm{Ancestor}(Alice) \setminus \mathrm{Ancestor}(Bob)$ then at some point we will have to go all over this difference, therefore we decided that the server could cross the part of its history corresponding to the difference. I now describe the algorithm that I developped during my internship. First, few definitions : 
 % However the server does not know what nodes are already in the history of the client. Hence the client need to send to the server its history so that the server knows when the exploration of its past shal stop. Sending all of the client's history can requiere a huge exchange of data, moreover in applications we are interested in (git) the difference we are trying to compute is usually small compared to the size of the all history. the client shall therefore only send the latest event in its history (a fixed number) so that in most case the server manages to make the link between the two histories. However 
 % in some cases the server will not be able to find any of the client's latest node in its history, in such cases the server will have to go throw all of its history (because the link can be anywhere) to understand that it has nothing in common with this set of latest nodes. We do not want the server to go throw all of its history as we have no bound on the size of this history. Thus the client need to tell the server that at some point of its exploration the server need to stop because there is no point in continuing the exploration. We introduce the Border of a set of nodes $A$ as defined such that for every nodes in $A$ each of its predecessor are either in $A$ or in the border of $A$. To sum up, the client divides its history in packages that will be called "window" and to each window we associate a "border" (see \ref{fig:twoproc}). Now if the client send a window and the union of all the borders to the server, this one will, at some point, find one of the two while exploring its history bottom-up and 
 % therefore will not have to go across all of its history.
@@ -17,14 +17,19 @@ In the following we will consider two DAGs, each with some particular nodes call
 \end{definition}
 \paragraph{Idea of the algorithm} We assume that a partition of its DAG of ancestors is known by the client as well as well as a border for every slice of the partition.
 \begin{enumerate}
- \item The client sends the list of its head, one of its slice and the union of all the border to the Server
- \item The server goes up in its history and stop whenever it crosses a node in the slice are in the border.
- \item The server computes the DAG $D$ of the successors of every nodes it found in slice.
- \item The server computes a list of "nodes of interest" from which it shall starts again the exploration (those "nodes of interest" are the last successors of the nodes found in the border that are not in $D$)
+ \item The client sends the list of its head, one of its slice and the union of all the border to the server
+ \item The server goes up in its history and stop whenever it crosses a node in the slice or in the border.
+%  \begin{enumerate}
+%   \item If it is in a slice, we had to the difference all of the successors of the node
+%   \item It it is in a border, we find the biggest successors of the node, that are not in the difference yet and label them as "nodes of interest"
+%  \end{enumerate}
+
+ \item The server computes the DAG $D$ (which is part of the difference) of the successors of every nodes it found in slice.
+ \item The server computes a list of "nodes of interest" from which it shall start again the exploration (those "nodes of interest" are the last successors of the nodes found in the border that are not in $D$)
  \item The server sends back $D$ and the list of "nodes of interest"
  \item The client starts again with anoter slice and instead of the list of its head it sends the list of "nodes of interest" it received from the server, except if there is no "node of interest" in which case the algorithm stop.
 \end{enumerate}
-\paragraph{} This algorithm as the property that the server have absolutely no memory. The figure~\ref{fig:twoproc} shows a partition of two dags in slices.
+\paragraph{} This algorithm as the property that the server have absolutely no memory of the previous client requests. The figure~\ref{fig:twoproc} shows a partition of two dags in slices.
 
 \begin{figure}[H]
 \centering
@@ -61,67 +66,86 @@ In the following we will consider two DAGs, each with some particular nodes call
 \end{tikzpicture}
 \caption{Two processes sharing a part of their history and their decomposition in Slices and Borders} \label{fig:twoproc}
 \end{figure}
-The figure~\ref{fig:twoproc} underlines the fact that it is interesting to have a interesting partition of the node, in the sense that :
+So far, we have made no assumptions on how to choose slices and borders. The figure~\ref{fig:twoproc} underlines the fact that it is interesting to have a interesting partition of the node, in the sense that :
 \begin{enumerate}
  \item We want the borders to be small so that we do not have to send a lot of information
  \item We want to do the least sending/receiving data to/from the server possible
  \item We want those slices/border to be easy to compute, in the sense that we do not want to cross all of the history of the client each time we want to merge
  \item We want the slices to be all of the same size
 \end{enumerate}
-Let us assume we decided that the slices should be of size $n$ and that a process already knows a partition $\mathcal{P} = \{A_0,\cdots,A_m\}$ in slices of its ancestors and the paired borders. This process needs to add some nodes $S$ in its history. We start by filling the set in the partition with a size smaller that $n$, by adding the element from $S$ in an order verifying the order of the DAG. Therefore if $S$ contains two nodes $a$ and $b$, $a$ being a predecessor of $b$ then $a$ will be added prior than $b$. Once every partition is of size $n$ we add a new slice to $\mathcal P$. While adding a node in one of the slices we add it in the border if one of its parents is not in the slice. The order in which we add the elements ensures us that the border will be the small (regarding the number of element in the slice). Hence we can build a new partition and the corresponding borders quite easily from the previous one. Finally in order to ensure that there is not a lot of exchanges between the client and the 
-server, the client send its slices from the newest to the oldest one. For example in figure~\ref{fig:twoproc} Bob will be sending the slices in the order $B_0$ then $B_1$ then $B_2$.
-
+Let us assume we decided that the slices should be of size $n$ and that a process already knows a partition $\mathcal{P} = \{A_0,\cdots,A_m\}$ in slices of its ancestors and the paired borders. This process needs to add some nodes $S$ in its history, wether because a event happened locally or because a server sent a DAG of nodes. We start by filling the set in the partition with a size smaller that $n$, by adding the element from $S$, if $S$ is a single element we add it, but if $S$ is a DAG of nodes, we add them in the order of the DAG. Therefore if $S$ contains two nodes $a$ and $b$, $a$ being a predecessor of $b$ then $a$ will be added prior than $b$. Once every partition is of size $n$ we add a new slice to $\mathcal P$. While adding a node in one of the slices we add it in the border if one of its parents is not in the slice. The order in which we add the elements ensures us that the border will be the small (regarding the number of element in the slice). Hence we can build a new partition and the corresponding borders quite easily from the previous one. Finally in order to ensure that there is not a lot of exchanges between the client and the 
+server, the client send its slices from the newest to the oldest one. For example in figure~\ref{fig:twoproc} Bob will be sending the slices in the order he built them, here that is : $B_0$ then $B_1$ then $B_2$.
+As for now we still have not made any assumptions on the way elements are stored, except that we need membership queries and merges.
 \paragraph{} As this algorithm is designed for multi processes, we wrote functions that can be used on the client side and on the server sides. Such functions are placed in a functor with the following signature :
-\begin{lstlisting}
- module Make :
-  functor (B : Graph.Sig.I) ->
-    functor (D : DataSig with type t = B.V.t) ->
-sig
-  type v
-  (** type t is the main type, it contains the ancestor dag of the set
-      of nodes it represents as well as the datastructure *)
-  type t
-  val empty_state : unit -> t
-  (** [next_ring il ia bf bd] is the function that computes the list
-      of the next interesting nodes and the ring of nodes where [il]
-      is the list of previous interesting nodes and [ia] is the
-      ancestors list of the interesting nodes and [bf] is the current
-      bloomfilter and [bd] the current border*)
-  val next_ring : B.V.t list -> B.t list -> D.u -> D.u -> (B.t * (B.V.t list))
-  (** [increase_high s old_hd_l new_hd] is the function that computes
-      the state of new_hd where [s] is the state corresponding to the
-      union of new_hd's fathers and [old_hd_l] is the list of new_hd's
-      fathers and [new_hd] is new_hd *)
-  val increase_high :  t ->  B.V.t list -> B.V.t -> t
-  (** [increase_width s f hd] is the function that computes the state
-      of the union of nodes where [s] was the state of the first nodes and
-      [f] is the callback function and [hd] is the next node to be added
-      to the state *)
-  val increase_width : t -> ( D.u -> D.u -> B.V.t list -> (B.V.t list * B.t)) -> B.V.t -> t
-end
-\end{lstlisting}
-\paragraph{Arguments} B is the DAGs signature and D is a datastructure module that enables merge and membership queries (for complete signature see section~\ref{sec:datasig}).
+% \begin{lstlisting}
+%  module Make :
+%   functor (B : Graph.Sig.I) ->
+%     functor (D : DataSig with type t = B.V.t) ->
+% sig
+%   type v
+%   (** type t is the main type, it contains the ancestor dag of the set
+%       of nodes it represents as well as the datastructure *)
+%   type t
+%   val empty_state : unit -> t
+%   (** [next_ring il ia bf bd] is the function that computes the list
+%       of the next interesting nodes and the ring of nodes where [il]
+%       is the list of previous interesting nodes and [ia] is the
+%       ancestors list of the interesting nodes and [bf] is the current
+%       bloomfilter and [bd] the current border*)
+%   val next_ring : B.V.t list -> B.t list -> D.u -> D.u -> (B.t * (B.V.t list))
+%   (** [increase_high s old_hd_l new_hd] is the function that computes
+%       the state of new_hd where [s] is the state corresponding to the
+%       union of new_hd's fathers and [old_hd_l] is the list of new_hd's
+%       fathers and [new_hd] is new_hd *)
+%   val increase_high :  t ->  B.V.t list -> B.V.t -> t
+%   (** [increase_width s f hd] is the function that computes the state
+%       of the union of nodes where [s] was the state of the first nodes and
+%       [f] is the callback function and [hd] is the next node to be added
+%       to the state *)
+%   val increase_width : t -> ( D.u -> D.u -> B.V.t list -> (B.V.t list * B.t)) -> B.V.t -> t
+% end
+% \end{lstlisting}
+\paragraph{Arguments} A module for DAGs signature and a datastructure module that enables merge and membership queries (for complete signature see section~\ref{sec:datasig}).
 \paragraph{Invariants} In order to explain the way these functions work, we detailed some invariants on those functions.
 \begin{enumerate}
- \item \label{itm:first} If $\texttt{il}$ is a list of nodes in the history of $A$, $\texttt{ia}$ is the list of the ancestor DAGs of the elements in $\texttt{il}$, if $\texttt{bf}$ is a datastructure containing a slice of $B$ and $\texttt{bd}$ is the union of all the borders of $B$, if $\texttt{g,l} = \texttt{next\_ring il ia bf bd}$ then 
-%  \begin{equation}
-\begin{align*}
-%  \begin{split}
- &\forall (x_0,x_1,\cdots,x_n) \in \mathrm{ancestor}(B), \\
-(
-&\forall i \in \{1,\cdots,n-1\},\ x_i \notin \texttt{bd}\cup\texttt{bf} \wedge (x_0 \rightarrow x_1 \rightarrow \cdots \rightarrow x_n) \wedge x_0 \in \texttt{bf} \wedge x_n \in \texttt{il}
-\\ &\Rightarrow \{x_0,x_1,\cdots,x_n\} \subset \texttt{g}
-% \end{split}
-)\\
-&\wedge \\
-(
- &\exists k \in \{1,\cdots,n-1\},\ (x_k \in \texttt{g} \wedge x_{k-1} \notin \texttt{g}) \wedge (x_0 \rightarrow x_1 \rightarrow \cdots \rightarrow x_n) \wedge x_0 \in \texttt{bd} \\
- &\wedge \forall i \in \{1,\cdots,n-1\},\ x_i \notin \texttt{bd}\cup\texttt{bf} \\
- &\Rightarrow x_{i-1} \in l
-)
+ \item \label{itm:first} 
+ \begin{lstlisting}
+  val next_ring : vertex list -> graph list -> database -> database -> (graph * (vertex list))
+ \end{lstlisting}
+ If $\texttt{il}$ is a list of nodes in the history of $A$, $\texttt{ia}$ is the list of the ancestor DAGs of the elements in $\texttt{il}$, if $\texttt{bf}$ is a datastructure containing a slice of $B$ and $\texttt{bd}$ is the union of all the borders of $B$, if $\texttt{g,l} = \texttt{next\_ring il ia bf bd}$ then 
+ \begin{align*}
+  g &= \left \{ x , \exists x_0 < x_1 < \cdots <x_j = x <\cdots< x_n ,\ (\forall i \in \{1,\cdots,n-1\},\ x_i \notin \texttt{bd}\cup\texttt{bf} \wedge x_0 \in \texttt{bf} \wedge x_n \in \texttt{il}) \right \}\\
+  l &= \overline{g}
  \end{align*}
- \item If $\texttt{s}$ is a state containing a DAG $D$ of the ancestors of a list $\texttt{old\_hd\_l}$ of nodes, then for all $\texttt{new\_hd}$, $\texttt{s'} = \texttt{increase\_high s old\_hd\_l new\_hd}$ is a state containing the DAG with head $\texttt{new\_hd}$, which fathers are $\texttt{old\_hd\_l}$ and $D$
- \item If $\texttt{s}$ is a state containing a DAG $D$, $\texttt{f}$ is a function veryfing the invariant of item \ref{itm:first} and $\texttt{t}$ is a node in $B$ then $\texttt{s'} = \texttt{increase\_width s f t}$ is a state containint the DAG $D$ as well as $t$ and all of its ancestors in $B$.
+
+%  \begin{equation}
+% \begin{align*}
+% %  \begin{split}
+%  &\forall (x_0,x_1,\cdots,x_n) \in \mathrm{ancestor}(B), \\
+% (
+% &\forall i \in \{1,\cdots,n-1\},\ x_i \notin \texttt{bd}\cup\texttt{bf} \wedge (x_0 \rightarrow x_1 \rightarrow \cdots \rightarrow x_n) \wedge x_0 \in \texttt{bf} \wedge x_n \in \texttt{il}
+% \\ &\Rightarrow \{x_0,x_1,\cdots,x_n\} \subset \texttt{g}
+% % \end{split}
+% )\\
+% &\wedge \\
+% (
+%  &\exists k \in \{1,\cdots,n-1\},\ (x_k \in \texttt{g} \wedge x_{k-1} \notin \texttt{g}) \wedge (x_0 \rightarrow x_1 \rightarrow \cdots \rightarrow x_n) \wedge x_0 \in \texttt{bd} \\
+%  &\wedge \forall i \in \{1,\cdots,n-1\},\ x_i \notin \texttt{bd}\cup\texttt{bf} \\
+%  &\Rightarrow x_{i-1} \in l
+% )
+%  \end{align*}
+ \item 
+ \begin{lstlisting}
+  val increase_high :  state ->  vertex list -> vertex -> state
+ \end{lstlisting}
+
+ If $\texttt{s}$ is a state containing a DAG $D$ of the ancestors of a list $\texttt{old\_hd\_l}$ of nodes, then for all $\texttt{new\_hd}$, $\texttt{s'} = \texttt{increase\_high s old\_hd\_l new\_hd}$ is a state containing the DAG with head $\texttt{new\_hd}$, which fathers are $\texttt{old\_hd\_l}$ and $D$
+ \item 
+ \begin{lstlisting}
+  val increase_width : state -> ( database -> database -> vertex list -> (vertex list * graph)) -> vertex -> state
+ \end{lstlisting}
+
+ If $\texttt{s}$ is a state containing a DAG $D$, $\texttt{f}$ is a function veryfing the invariant of item \ref{itm:first} and $\texttt{t}$ is a node in $B$ then $\texttt{s'} = \texttt{increase\_width s f t}$ is a state containint the DAG $D$ as well as $t$ and all of its ancestors in $B$.
 % \end{equation}
 \end{enumerate}
 % \begin{algorithm}[H] 

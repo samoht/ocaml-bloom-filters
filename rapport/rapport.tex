@@ -18,7 +18,7 @@
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \providecommand{\SetAlgoLined}{\SetLine}
 \providecommand{\DontPrintSemicolon}{\dontprintsemicolon}
-\title{Efficient synchronization of DAGs}
+\title{Efficient synchronization of immutable DAGs}
 \author{Matthieu JOURNAULT}
 \date{24/06/2013}
 \theoremstyle{definition}
@@ -97,7 +97,7 @@ decorate, decoration={
 \begin{document}
 \maketitle
 \begin{abstract}
-Mirage is a database designed to run in distributed, decentralised settings. Mirage gives the user the same primitive as distributed version control systems. This report details the design of a merge algorithm which enables an unknown number of processes doing commits to merge their history. The detailed algorithm produces a small (compared to the size of the history) exchange of information between a client and a server, the algorithm enables the server to be memory free regarding a particular client.
+Irmin is a database designed to run in distributed, decentralised settings. Irmin gives the user the same primitive as distributed version control systems. This report details the design of a merge algorithm which enables an unknown number of processes doing commits to synchronize their history. The detailed algorithm produces a small (compared to the size of the history) exchange of information between a client and a server, the algorithm enables the server to be memory free regarding a particular client.
 \end{abstract}
 \tableofcontents
 % \begin{lstlisting}
@@ -107,10 +107,10 @@ Mirage is a database designed to run in distributed, decentralised settings. Mir
 \chapter{Research subject}
 \section{Introduction to the problem}
 \input{pb.tex}
-\section{Introduction to Bloomfilters}
+\section{Introduction to Bloom filters}
 \input{bf.tex}
 \chapter{Results}
-\section{Preliminary result on Dags and Bloomfilters}
+\section{Preliminary result on DAGS and Bloom filters}
 \label{sec:prelim}
 \input{prelim.tex}
 \section{Algorithm}
