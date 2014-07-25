@@ -1,4 +1,4 @@
-We assume that we have a collection of processes $P_0,\cdots,P_{n-1}$ that can communicate by exchanging messages. In our work we will assume that the processes can do two main actions that are "commiting" local data and "merging" remote data with an other process. For simplicity, we assume merge is always between 2 processes, we could easily generalise it to $n$-process merge. Each of the process $P_i$ is doing a serie of action in a certain total order $\prec_i$, each actions resulting in a new state for the process.
+We assume that we have a collection of processes $P_0,\cdots,P_{n-1}$ that can communicate by exchanging messages. In our work we will assume that the processes can do two main nodes that are "commiting" local data and "merging" remote data with an other process. For simplicity, we assume merge is always between 2 processes, we could easily generalise it to $n$-process merge. Each of the process $P_i$ is doing a serie of action in a certain total order $\prec_i$, each nodes resulting in a new state for the process.
 
 \begin{figure}[H]
 \centering
@@ -190,9 +190,9 @@ We assume that we have a collection of processes $P_0,\cdots,P_{n-1}$ that can c
 
 \paragraph{} Figures~\ref{fig:21} shows an example with three processes doing commits (C) and Merging with other process ($M(i)$). 
 % This figure shows an underlying partial order between elements as defined by Leslie Lamport (TODO : put reference). 
-\begin{definition} We define the relation $<$ as the smallest relation on the actions following the conditions :
+\begin{definition} We define the relation $<$ as the smallest relation on the nodes following the conditions :
  \begin{enumerate}
-  \item If $a$ and $b$ are two actions of the same process $P_i$ and $a \prec_i b$ then $a < b$
+  \item If $a$ and $b$ are two nodes of the same process $P_i$ and $a \prec_i b$ then $a < b$
   \item If $b$ is a merge state and $a$ is the state from which the merge occured on another process then $a<b$
   \item If $a< b$ and $b<c$ then $a<c$ 
  \end{enumerate}
@@ -225,14 +225,14 @@ Such a labeling can be seen on Figure~\ref{fig:23}. We define the $\preccurlyeq$
 \end{proposition}
 
 These two propositions allow processes to find their common ancestor just by computing the min with the label received. Once the biggest common ancestor is found, the difference of history between the two nodes can easily be computed and shared so that one node know the history of the other.
-\paragraph{} In all of the previous remarks we considered the total number of processes known in advance, however in many cases it is not the case, for example in Git one does not know how many contributors will be part of a project at the end. In our case we will work on DAGs, with the only constraint that each node has a hashable identifier different from every other nodes. Therefore we are working under the assumptions that : 
+\paragraph{} In all of the previous remarks we considered the total number of processes known in advance, however in many cases it is not the case, for example in Git one does not know how many contributors will be part of a project at the end. Vector clocks are nice and easy to use : they can be built incrementally when merging or commiting, a minimum computation gives the BCA when there is only one, however there is no bound on the indexes in the vector which size must be set at the beginning. In section~\ref{sec:prelim} we tried to adapt the work on Vector Clocks to our problem. In our case we will work on DAGs, with the only constraint that each node has a hashable identifier different from every other nodes. Therefore we are working under the assumptions that : 
 \begin{itemize}
  \item \textbf{we have DAGs, with the only constraint that each node has a hashable identifier different from every other nodes.}
  \item \textbf{two nodes can have more than one biggest common ancestor}
  \item \textbf{there can be any number of processes involved}
 \end{itemize}
-The next figure gives an example of DAGs we will be considering Figure~\ref{fig:31}, and of the history of two processes Alice (Figure~\ref{fig:32}) and 
-Bob (Figure~\ref{fig:33}) that have some history in common.
+The figure~\ref{fig:22a}gives an example of DAGs we will be considering, and of the history of two processes Alice (Figure~\ref{fig:22b}) and 
+Bob (Figure~\ref{fig:22c}) that have some history in common.
 
 \begin{figure}[H]
 \centering
@@ -266,7 +266,7 @@ Bob (Figure~\ref{fig:33}) that have some history in common.
   \path[thin] (a7) edge (a6);
   \path[thin] (a8) edge (a6);
   \end{tikzpicture}
-  \caption{Main Graph} \label{fig:31}
+  \caption{Main Graph} \label{fig:22a}
   \end{subfigure}%
  \begin{subfigure}[b]{0.3\textwidth}
   \centering
@@ -305,7 +305,7 @@ Bob (Figure~\ref{fig:33}) that have some history in common.
   \path[thin] (a9) edge (a7);
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
-  \caption{Alice's ancestors, 1 is the head of Alice} \label{fig:32}
+  \caption{Alice's ancestors, 1 is the head of Alice} \label{fig:22b}
 \end{subfigure}
 \begin{subfigure}[b]{0.3\textwidth}
 \centering
@@ -337,7 +337,7 @@ Bob (Figure~\ref{fig:33}) that have some history in common.
   \path[thin] (a7) edge (a6);
   \path[thin] (a8) edge (a6);
   \end{tikzpicture}
-  \caption{Bob's ancestors, 6 is the head of Bob} \label{fig:33}
+  \caption{Bob's ancestors, 6 is the head of Bob} \label{fig:22c}
 \end{subfigure}
 \caption{two processes Alice and Bob that share a part of their history}
 \end{figure}

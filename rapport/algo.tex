@@ -19,13 +19,12 @@ In the following we will consider two DAGs, each with some particular nodes call
 \begin{enumerate}
  \item The client sends the list of its head, one of its slice and the union of all the border to the server
  \item The server goes up in its history and stop whenever it crosses a node in the slice or in the border.
-%  \begin{enumerate}
-%   \item If it is in a slice, we had to the difference all of the successors of the node
-%   \item It it is in a border, we find the biggest successors of the node, that are not in the difference yet and label them as "nodes of interest"
-%  \end{enumerate}
-
+ \begin{enumerate}
+  \item If it crosses a slice, the servor found a common ancestor with the client
+  \item It it crosses a border, it means the exploration is pointless and should be stopped
+ \end{enumerate}
  \item The server computes the DAG $D$ (which is part of the difference) of the successors of every nodes it found in slice.
- \item The server computes a list of "nodes of interest" from which it shall start again the exploration (those "nodes of interest" are the last successors of the nodes found in the border that are not in $D$)
+ \item The server computes a list of "nodes of interest" from which it shall start again the exploration (those "nodes of interest" are the last successors of the nodes found in the border that are not in $D$, they are the node from which the server should start again the exploration later).
  \item The server sends back $D$ and the list of "nodes of interest"
  \item The client starts again with anoter slice and instead of the list of its head it sends the list of "nodes of interest" it received from the server, except if there is no "node of interest" in which case the algorithm stop.
 \end{enumerate}
@@ -73,9 +72,10 @@ So far, we have made no assumptions on how to choose slices and borders. The fig
  \item We want those slices/border to be easy to compute, in the sense that we do not want to cross all of the history of the client each time we want to merge
  \item We want the slices to be all of the same size
 \end{enumerate}
-Let us assume we decided that the slices should be of size $n$ and that a process already knows a partition $\mathcal{P} = \{A_0,\cdots,A_m\}$ in slices of its ancestors and the paired borders. This process needs to add some nodes $S$ in its history, wether because a event happened locally or because a server sent a DAG of nodes. We start by filling the set in the partition with a size smaller that $n$, by adding the element from $S$, if $S$ is a single element we add it, but if $S$ is a DAG of nodes, we add them in the order of the DAG. Therefore if $S$ contains two nodes $a$ and $b$, $a$ being a predecessor of $b$ then $a$ will be added prior than $b$. Once every partition is of size $n$ we add a new slice to $\mathcal P$. While adding a node in one of the slices we add it in the border if one of its parents is not in the slice. The order in which we add the elements ensures us that the border will be the small (regarding the number of element in the slice). Hence we can build a new partition and the corresponding borders quite easily from the previous one. Finally in order to ensure that there is not a lot of exchanges between the client and the 
+Let us assume we decided that the slices should be of size $n$ and that a process already knows a partition $\mathcal{P} = \{A_0,\cdots,A_m\}$ in slices of its ancestors and the paired borders. This process needs to add some nodes $S$ in its history, wether because a event happened locally or because a server sent a DAG of nodes. We start by filling the set in the partition with a size smaller that $n$, by adding the element from $S$, if $S$ is a single element we add it, but if $S$ is a DAG of nodes, we add them in the order of the DAG. Therefore if $S$ contains two nodes $a$ and $b$, $a$ being a predecessor of $b$ then $a$ will be added prior than $b$. Once every partition is of size $n$ we add a new slice to $\mathcal P$. While adding a node in one of the slices we add it in the border if one of its parents is not in the slice. The order in which we add the elements ensures us that the border will be the small (regarding the number of element in the slice). Hence we can build a new partition and the 
+corresponding borders quite easily from the previous one. Finally in order to ensure that there is not a lot of exchanges between the client and the 
 server, the client send its slices from the newest to the oldest one. For example in figure~\ref{fig:twoproc} Bob will be sending the slices in the order he built them, here that is : $B_0$ then $B_1$ then $B_2$.
-As for now we still have not made any assumptions on the way elements are stored, except that we need membership queries and merges.
+As for now we still have not made any assumptions on the way elements are stored, except that we need membership queries and merges. We could use normal sets but also BF (both case have been implemented). In the case of BF we have to take care of false positive (see section~\ref{sec:fp}).
 \paragraph{} As this algorithm is designed for multi processes, we wrote functions that can be used on the client side and on the server sides. Such functions are placed in a functor with the following signature :
 % \begin{lstlisting}
 %  module Make :

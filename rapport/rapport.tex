@@ -117,6 +117,7 @@ Irmin is a database designed to run in distributed, decentralised settings. Irmi
 \subsection{General algorithm}
 \input{algo.tex}
 \subsection{The False-positive case}
+\label{sec:fp}
 \input{fp.tex}
 \subsection{Assymptotic behaviour}
 \input{asymptot.tex}
@@ -137,6 +138,25 @@ Irmin is a database designed to run in distributed, decentralised settings. Irmi
 \input{datasig.tex}
 %   \input{algo.tex}
 \end{document}
+% p3.  Research Subject
+% - manque un petit paragraphe: pour expliquer ce que tu as fait pendant ton stage: expliquer ton titre: immutable DAGs, expliquer le "cost modèle" du graphe (écriture rapide, accès aux prédécesseurs rapides, les graphes ne peuvent que grossir), expliquer la synchronisation dans ce cas est un calcul de différence, et qu'il va falloir qu'on puisse calculer rapidement si un élément est dans le passé de 2 éléments.
+% - manque un paragraphe pour expliquer quelle approche tu as suivi: expérimentation sur les vector clocks, sur les bloom filters, implémentation d'un algo de graph client/serveur "stateless" qui est optimisée pour des différences petits (ie. complexité relative a la taille de la différence). Evaluation en le comparant à de vrais systèmes (je dois t'aider pour instrumenter Git, mais ça serait bien de trouver des trucs qui synchronisent des Merkle tree si on a du temps, sinon tant pis)
+
+
+% p7. Chapter 3
+
+% revoir l'organisation de la section
+
+% 3. faire un para entier sur ton algo de génération de graphe aléatoire
+% stats manquantes: nombre d'éléments vérifiant l'égalité quand y 1 seul BCA
+% 
+% p8 Algo
+% 
+% (normaliser aussi les utilisations de successors, predecessors)
+% 
+% structure de la suite:
+
+% Dernier point. Je me demande si ça serait pas plus simple de dire très tôt (par exemple dans l'intro du chapitre 2) qu'on travaille sur des graphes immutables, et que du coup on fixe un graphe global G une fois pour toute. Ensuite l'état des process c'est juste leur heads (et leur graphes c'est la fermeture transitive des têtes \downarrow(H) ou un truc du genre). Ça permettait d'être plus clair sur tes fonction "Ancestor" (qui n'est jamais vraiment défini dans ton rapport). Qu'en penses tu ?
 
 % - p2: intro and context:
 % NetOS -> Ocaml Labs -> Mirage -> Irmin
