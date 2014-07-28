@@ -158,18 +158,17 @@ struct
 	  if (Hashtbl.mem explored node) then
 	    ()
 	  else 
-	    
-	    
 	    begin
-	      Printf.printf "going up %s\n" (binaire_to_hexa (D.name node)); 
-	      flush stdout;
+(*
+	      Printf.printf "going up %s\n" (binaire_to_hexa (D.name node));
+	      flush stdout;*)
 	      Hashtbl.add explored node true;
 	      let is_in_bf = D.mem node bf in
 	      if (is_in_bf) then 
 		begin
-		  
-		  Printf.printf "going bf %s\n" (binaire_to_hexa (D.name node)); 
-		  flush stdout;
+		 (*
+		  Printf.printf "going bf %s\n" (binaire_to_hexa (D.name node));
+		  flush stdout;*) 
 		  found_in_bf node ancetre;
 		end
 	      else
@@ -177,9 +176,9 @@ struct
 		    let is_in_border = D.mem node border in
 		    if (is_in_border) then 
 		      begin
-			
-			Printf.printf "going bd %s\n" (binaire_to_hexa (D.name node)); 
-			flush stdout;
+			(*
+			Printf.printf "going bd %s\n" (binaire_to_hexa (D.name node));
+			flush stdout;*)
 			found_in_border node ancetre
 		      end
 	            else 
@@ -199,16 +198,16 @@ struct
 		  ()
 		else
 		  begin
-		    
-		    Printf.printf "going up %s\n" (binaire_to_hexa (D.name node)); 
-		    flush stdout;
+(*
+		    Printf.printf "going up %s\n" (binaire_to_hexa (D.name node));
+		    flush stdout;*)
 		    Hashtbl.add explored node true;
 		    let is_in_bf = D.mem node bf in
 		    if (is_in_bf) then 
 		      begin
-			
-			Printf.printf "going bf %s\n" (binaire_to_hexa (D.name node)); 
-			flush stdout;
+		      (*
+			Printf.printf "going bf %s\n" (binaire_to_hexa (D.name node));
+			flush stdout;*)
 			found_in_bf node ancetre
 		      end
 		    else
@@ -216,9 +215,9 @@ struct
 			let is_in_border = D.mem node border in
 			if (is_in_border) then 
 			  begin
-			    
-			    Printf.printf "going bd %s\n" (binaire_to_hexa (D.name node)); 
-			    flush stdout;
+			    (*
+			    Printf.printf "going bd %s\n" (binaire_to_hexa (D.name node));
+			    flush stdout;*)
 			    found_in_border node ancetre
 			  end
 			else 
@@ -280,7 +279,7 @@ struct
  (*    if (B.is_empty g) then 
 	(g,node_list)
       else*)
-      List.iter (fun x -> if (B.mem_vertex g x) then () else (node_of_interest := x::(!node_of_interest))) node_list;
+      (*List.iter (fun x -> if (B.mem_vertex g x) then () else (node_of_interest := x::(!node_of_interest))) node_list;*)
       (g,!node_of_interest)
 
     let get_history node_list state g bf border =
@@ -464,7 +463,8 @@ struct
       state_new
 
     let increase_width (state_init : t) (f : D.u -> D.u -> B.V.t list -> (B.V.t list * B.t)) (head : B.V.t) =
-
+      (*Printf.printf "NEW BF\n";
+      flush stdout;*)
       let bf = ref (state_init.bf) in
       let border_l_1,border_l_2 = split (state_init.border) [] [] in
       let border_l_ref = ref (border_l_2) in
@@ -475,8 +475,8 @@ struct
       let interest = ref [head] in
       let nb_turn = ref 0 in
       while (!keep_going) do
+(*	Printf.printf "New turn\n";*)
 	incr nb_turn;
-	Printf.printf "Tour : %d\n" (!nb_turn);
 	match (!bf) with
 	|(a,p)::q -> 
 	  begin
@@ -486,6 +486,8 @@ struct
 	      begin
 		
 		let lretour,couronne = f p (D.merge (!border_l_ref) []) (!interest) in 
+		(*List.iter (fun x -> Printf.printf "contret : %s\n" (binaire_to_hexa (D.name x))) lretour;*)
+		interest := lretour;
 		border_l_ref := r;
 		unif_graphe graph_rep couronne;
 		if (lretour = []) then
@@ -500,12 +502,6 @@ struct
 	added_node_l := node_in :: (!added_node_l)
       in
       iter_graphe_from_high g (graph_rep) head;
-      if (binaire_to_hexa (D.name head) ="cbee13e5fd7abfadbce520f9063f658fc74c825e8") then
-	begin
-	  Printf.printf "Content:\n";
-	  B.iter_vertex (fun x -> (Printf.printf "%s\n" (binaire_to_hexa (D.name head)))) graph_rep;
-	end;
-
       unif_graphe graph_rep (state_init.ancestor);
 
       let statenew = add (!added_node_l) (state_init) (graph_rep) in

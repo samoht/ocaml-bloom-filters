@@ -247,13 +247,13 @@ struct
    let default_edge_attributes _ = []
    let get_subgraph _ = None
    let vertex_attributes v = 
-     if ((binaire_to_hexa v) <> "c2c6803c67bf13018c08a1854ca95a2e8511f1372") then [`Shape `Box]
+     if ((binaire_to_hexa v) <>"e6a79b88f160becaf57e518ed4715cef0b25008a") then [`Shape `Box]
      else (Printf.printf "FOUND" ; [`Fillcolor(125);`Shape `Circle])
    let vertex_name v =
      if (String.length v mod 4 = 0) then
-       binaire_to_hexa v
+       "\""^binaire_to_hexa v^"\""
      else
-       v
+        v 
    let default_vertex_attributes _ = []
   let graph_attributes _ = []
 end;;
@@ -958,9 +958,14 @@ let main4 () =
   for k = 1 to 8 do
   
     (*let coutbca = open_out ("resultprem/bca"^(string_of_int k)) in*)
-    let coutnum = open_out ("resultprem/num"^(string_of_int k)) in
+    let cout = open_out ("resultslice/high"^(string_of_int k)) in
     for p = 1 to 10 do
       let g,b = DagGen.alea 100 (k*10) 160 0 ((float_of_int p)/.10.) in
+
+      let file = open_out_bin ("test.dot") in
+      MyDot.output_graph file g;
+      let f = simule2 g b in
+(*
       let htbl = compute_old_bf g 160 in
       let num = ref 0 in
       (*let nbc = ref 0 in*)
@@ -973,14 +978,13 @@ let main4 () =
 	(*let nb_bca= compute_bca g a b in*)
 	num := !num + nb_under_min;
 	(*nbc := !nbc + nb_bca;*)
-      in
-      MyGraph.iter_vertex (fun x -> (MyGraph.iter_vertex (fun y -> deal_with_couple x y) g)) g;
+      MyGraph.iter_vertex (fun x -> (MyGraph.iter_vertex (fun y -> deal_with_couple x y) g)) g;*)
       Printf.printf "%d %d\n" k p;
       (*Printf.fprintf coutbca "%f %f\n" (float_of_int p /. 10.) (float_of_int (!nbc) /. 10000.);*)
-      Printf.fprintf coutnum "%f %f\n" (float_of_int p /. 10.) (float_of_int (!num) /. 10000.);
+      Printf.fprintf cout "%f %f\n" (float_of_int p /. 10.) f;
     done;
     (*close_out coutbca;*)
-    close_out coutnum;
+  close_out cout;
   done;;
 
 main4 ();;
