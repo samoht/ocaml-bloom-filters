@@ -2,7 +2,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage{lmodern}
-\usetheme{Singapore}
+% \usetheme{Singapore}
 \usepackage{subcaption}
 \usepackage{fontenc}
 \usepackage{graphicx}
@@ -232,8 +232,8 @@ decorate, decoration={
 
 \begin{alertblock}{Hypothesis}
  \begin{itemize}
- \item \textbf{Each node has a hashable identifier}
- \item \textbf{More than one biggest common ancestor}
+ \item \textbf{Each node has a unique hashable identifier}
+ \item \textbf{At least one biggest common ancestor}
  \item \textbf{Any number of processes involved}
 \end{itemize}
 \end{alertblock}
@@ -294,7 +294,7 @@ decorate, decoration={
 \end{scope}
 \end{tikzpicture}
 }
-\caption{Two processes sharing a part of their history and their decomposition in Slices and Borders} \label{fig:twoproc}
+% \caption{Two processes sharing a part of their history and their decomposition in Slices and Borders} \label{fig:twoproc}
 \end{figure}
 
 \end{frame}
@@ -303,23 +303,16 @@ decorate, decoration={
  \frametitle{Exploration}
  \begin{exampleblock}{Signature}
  \begin{lstlisting}
-  val next_ring : vertex list -> graph -> database -> database -> (graph * (vertex list))
+  val explore : vertex list -> graph -> slice -> borders -> (graph * (vertex list))
  \end{lstlisting}
  \end{exampleblock}
 
  \begin{block}{Idea of the algorithm}
   \begin{enumerate}
 \setbeamercovered{transparent}
-\uncover<2-2>{\item The server receives a slice and all of the borders from a client}
-\uncover<3-3>{\item The server goes up in its history and stop whenever it crosses a node in the slice or in the border.
- \begin{enumerate}
-  \item If it crosses a slice, the servor found a common ancestor with the client
-  \item It it crosses a border, exploration is stopped
- \end{enumerate}
- }
-\uncover<4-4>{\item The server computes the DAG $D$ of the successors of every nodes it found in slice.}
-\uncover<5-5>{\item The server computes a list of "nodes of interest" from which it shall start again the exploration.}
-\uncover<6-6>{\item The server sends back $D$ and the list of "nodes of interest"}
+\uncover<2-2>{\item Given a slice and borders the server explores its past and stop when it crosses a slice or a border}
+\uncover<3-3>{\item The server computes the DAG $D$ of the successors of every nodes it found in slice.}
+\uncover<4-4>{\item The server computes a list of "nodes of interest" from which it shall start again the exploration.}
 \end{enumerate}
  \end{block}
 
@@ -337,21 +330,21 @@ decorate, decoration={
   \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
   thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
   \foreach \place/\x in {{(0,0)/1}, {(0,1)/2}}
-  \node[arn_g] (a\x) at \place {\x};
+  \node[arn_n] (a\x) at \place {\x};
   
   
-  \node[arn_pis] (a5) at (1,4.5) {5};
-  \node[arn_pis] (a13) at (2,5) {13};
-  \node[arn_pis] (a14) at (2,6) {14};
+  \node[arn_n] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_n] (a14) at (2,6) {14};
   
   
-  \node[arn_b] (a10) at (2,3) {10};
-  \node[arn_b] (a7) at (1.5,2) {7};
-  \node[arn_bs] (a3) at (0,2) {3};
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_n] (a7) at (1.5,2) {7};
+  \node[arn_n] (a3) at (0,2) {3};
   
-  \node[arn_rs] (a9) at (1,3) {9};
-  \node[arn_rs] (a12) at (2,4) {12};
-  \node[arn_rs] (a4) at (0,3) {4};
+  \node[arn_n] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+  \node[arn_n] (a4) at (0,3) {4};
   %   Alice history
   \path[thin] (a14) edge (a5);
   \path[thin] (a5) edge (a4);
@@ -416,7 +409,7 @@ decorate, decoration={
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
   }
-  \caption*{Explore}
+  \caption*{[1] Explore}
 \end{subfigure}%
 }%
 \only<3>{
@@ -462,7 +455,7 @@ decorate, decoration={
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
   }
-  \caption*{Deal with nodes in Slice}
+  \caption*{[2] Deal with nodes in Slice}
 \end{subfigure}%
 }%
 \only<4>{
@@ -510,7 +503,7 @@ decorate, decoration={
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
   }
-  \caption*{Deal with nodes in Border}
+  \caption*{[3] Deal with nodes in Border}
 \end{subfigure}%
 }%
 \only<5>{
@@ -556,7 +549,7 @@ decorate, decoration={
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
   }
-  \caption*{Explore}
+  \caption*{[1] Explore}
 \end{subfigure}%
 }%
 \only<6>{
@@ -602,7 +595,7 @@ decorate, decoration={
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
   }
-  \caption*{Deal with nodes in Slice}
+  \caption*{[2] Deal with nodes in Slice}
 \end{subfigure}%
 }%
 \only<7>{
@@ -648,7 +641,7 @@ decorate, decoration={
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
   }
-  \caption*{Deal with nodes in Border}
+  \caption*{[3] Deal with nodes in Border}
 \end{subfigure}%
 }%
 \only<8>{
@@ -694,7 +687,7 @@ decorate, decoration={
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
   }
-  \caption*{Explore}
+  \caption*{[1] Explore}
 \end{subfigure}%
 }%
 \only<9>{
@@ -740,7 +733,7 @@ decorate, decoration={
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
   }
-  \caption*{Deal with nodes in Slice}
+  \caption*{[2] Deal with nodes in Slice}
 \end{subfigure}%
 }%
 \only<10>{
@@ -786,7 +779,7 @@ decorate, decoration={
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
   }
-  \caption*{Deal with nodes in Border}
+  \caption*{[3] Deal with nodes in Border}
 \end{subfigure}%
 }%
 \begin{subfigure}[b]{0.5\textwidth}
