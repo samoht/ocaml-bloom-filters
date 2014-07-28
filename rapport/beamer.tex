@@ -946,20 +946,33 @@ decorate, decoration={
  \end{alertblock}
  \begin{alertblock}{False Positive}
  \begin{itemize}
-  \item In Slice : Client realizes directly and reask the server
-  \item In Borders : Client can not realize and send all Slices until it realizes
+  \item In Slice : Client realizes directly and ask the server again
+  \item In Borders : Client can not realize and send all slices until it realizes
  \end{itemize}
 
 \end{alertblock}
 \end{frame}
 
 \subsection{Evaluation}
-\frametitle{Evaluation}
 \begin{frame}
+\frametitle{Evaluation}
  \begin{figure}[H]
   \includegraphics[height=7cm]{./image/slicesent/Nb_sent_slice.png}
  \end{figure}
+\end{frame}
+
+\section{Conclusion}
+\begin{frame}
+ \begin{exampleblock}{Conclusion}
+  \begin{itemize}
+   \item Very few false positive
+   \item A small amount of information exchanged (an average of $20\times 320 \times 1.3$ bits in our example)
+   \item A fast and incremental method on the client side, a linear (in the size of the difference) complexity on the server side.
+   \item The server is memory free regarding a particular client.
+  \end{itemize}
+  \end{exampleblock}
 
 \end{frame}
+
 
 \end{document}
