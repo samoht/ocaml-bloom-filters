@@ -225,13 +225,14 @@ Such a labeling can be seen on Figure~\ref{fig:23}. We define the $\preccurlyeq$
 \end{proposition}
 
 These two propositions allow processes to find their common ancestor just by computing the min with the label received. Once the biggest common ancestor is found, the difference of history between the two nodes can easily be computed and shared so that one node know the history of the other.
-\paragraph{} In all of the previous remarks we considered the total number of processes known in advance, however in many cases it is not the case, for example in Git one does not know how many contributors will be part of a project at the end. Vector clocks are nice and easy to use : they can be built incrementally when merging or commiting, a minimum computation gives the BCA when there is only one, however there is no bound on the indexes in the vector which size must be set at the beginning. In section~\ref{sec:prelim} we tried to adapt the work on Vector Clocks to our problem. In our case we will work on DAGs, with the only constraint that each node has a hashable identifier different from every other nodes. Therefore we are working under the assumptions that : 
+\paragraph{} In all of the previous remarks we considered the total number of processes known in advance, however in many cases it is not the case, for example in Git one does not know how many contributors will be part of a project at the end. Vector clocks are nice and easy to use : they can be built incrementally when merging or commiting, a minimum computation gives the BCA when there is only one, however there is no bound on the indexes in the vector which size must be set at the beginning. In section~\ref{sec:prelim} we tried to adapt the work on Vector Clocks to our problem. Therefore we are working under the assumptions that : 
 \begin{itemize}
  \item \textbf{we have DAGs, with the only constraint that each node has a hashable identifier different from every other nodes.}
  \item \textbf{two nodes can have more than one biggest common ancestor}
  \item \textbf{there can be any number of processes involved}
 \end{itemize}
-The figure~\ref{fig:22a}gives an example of DAGs we will be considering, and of the history of two processes Alice (Figure~\ref{fig:22b}) and 
+The graphs we are working on are immutable in the sense that the past does not change, we only add elements on the top, and computing $\texttt{pred}(x)$ is cheap. We will pay a particular attention toward optimizing the cases where the difference between the two DAGs is small.
+The figure~\ref{fig:22a} gives an example of DAGs we will be considering, and of the history of two processes Alice (Figure~\ref{fig:22b}) and 
 Bob (Figure~\ref{fig:22c}) that have some history in common.
 
 \begin{figure}[H]

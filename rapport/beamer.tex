@@ -1,0 +1,963 @@
+\documentclass[10pt,xcolor={usenames,dvipsnames,svgnames,table}]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usetheme{Singapore}
+\usepackage{subcaption}
+\usepackage{fontenc}
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{float}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+
+% \usepackage[usenames,dvipsnames]{color}
+% \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\providecommand{\SetAlgoLined}{\SetLine}
+\providecommand{\DontPrintSemicolon}{\dontprintsemicolon}
+\author{Matthieu JOURNAULT}
+\date{July 2014}
+\title{Efficient synchronization of persistant DAGs
+}
+\theoremstyle{definition}
+% \newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+% \newtheorem{definition}{Definition}
+\theoremstyle{definition}
+\usepackage{tikz}
+\definecolor{turquoise}{RGB}{255,127,0}
+\usetikzlibrary{decorations.pathmorphing}
+% \usetikzlibrary{arrows}
+\usetikzlibrary{chains,fit,shapes}
+\usetikzlibrary{arrows}
+% \usepackage{fullpage}
+\tikzset{
+  treenode/.style = {align=center, inner sep=0pt, text centered,
+    font=\sffamily},
+      zigzag/.style = {->,black,very thick,line join=round,
+decorate, decoration={
+    zigzag,
+    segment length=4,
+    amplitude=.9,post=lineto,
+    post length=2pt
+}},
+zigzagred/.style = {->,red,very thick,line join=round,
+decorate, decoration={
+    zigzag,
+    segment length=4,
+    amplitude=.9,post=lineto,
+    post length=2pt
+}},
+  arn_bb/.style = {treenode, circle, black, font=\sffamily\bfseries, draw=black,
+    fill=white, text width=2.5em, very thick},% arbre rouge noir, noeud noir
+  arn_ns/.style = {treenode, rectangle, white, font=\sffamily\bfseries, draw=black,
+    fill=black, minimum width=1.5em, minimum height=1.5em, very thick},% arbre rouge noir, noeud noir
+  arn_n/.style = {treenode, circle , white, font=\sffamily\bfseries, draw=black,
+    fill=black, text width=1.5em},% arbre rouge noir, noeud noir
+    arn_nb/.style = {treenode, circle , white, font=\sffamily\bfseries, draw=black,
+    fill=black, text width=2.5em},
+  arn_r/.style = {treenode, circle , red, draw=red, 
+    text width=1.5em, very thick},% arbre rouge noir, noeud rouge
+  arn_x/.style = {treenode, rectangle, draw=black,
+    minimum width=1em, minimum height=1em},% arbre rouge noir, nil
+  arn_b/.style = {treenode, circle , blue, draw=blue, 
+    text width=1.5em, very thick},
+  arn_g/.style = {treenode, circle , green, draw=green, 
+    text width=1.5em, very thick},
+  arn_y/.style = {treenode, circle , yellow, draw=yellow, 
+    text width=1.5em, very thick},
+    arn_pu/.style = {treenode, circle , purple, draw=purple, 
+    text width=1.5em, very thick},
+    arn_pi/.style = {treenode, circle , pink, draw=pink, 
+    text width=1.5em, very thick},
+    arn_t/.style = {treenode, circle , pink, draw=turquoise, 
+    text width=1.5em, very thick},
+    arn_rb/.style = {treenode, circle , red, draw=red, 
+    text width=2.5em, very thick},
+    arn_bs/.style = {treenode, rectangle , blue, draw=blue, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    arn_rs/.style = {treenode, rectangle, red, draw=red, 
+    minimum width=1.5em, minimum height=1.5em, very thick},% arbre rouge noir, noeud rouge
+  arn_gs/.style = {treenode, rectangle , green, draw=green, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+  arn_ys/.style = {treenode, rectangle , yellow, draw=yellow, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    arn_pus/.style = {treenode, rectangle , purple, draw=purple, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    arn_pis/.style = {treenode, rectangle , pink, draw=pink, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    arn_rbs/.style = {treenode, rectangle , red, draw=red, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    arn_ts/.style = {treenode, rectangle, pink, draw=turquoise, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    }
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+% \logo{\includegraphics[height=0.5cm]{./image/lip.png}}
+\setbeamercolor{section in head/foot}{use=structure,bg=structure.fg!25!bg}
+\useoutertheme[subsection=false]{miniframes}
+\setbeamertemplate{frametitle}[default][center]
+\input{caml.tex}
+\begin{document}
+\maketitle
+\begin{frame}
+ \tableofcontents
+\end{frame}
+\section{Introduction}
+\subsection{Problem presentation}
+\begin{frame}
+ \frametitle{Alice and Bob want to merge}
+ \begin{figure}[H]
+\centering
+ \begin{subfigure}[b]{0.3\textwidth}
+  \centering
+  \resizebox{0.9\textwidth}{!}{
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  
+  \foreach \place/\x in {{(0,0)/1}, {(0,1)/2},{(0,2)/3},{(0,3)/4}, {(1,4.5)/5}, {(2,1)/6}, {(1.5,2)/7},{(2.5,2)/8},{(1,3)/9},{(2,3)/10},{(3,3)/11},{(2,4)/12},{(2,5)/13},{(2,6)/14}}
+  \node[arn_n] (a\x) at \place {\x};
+%   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+%   Bob history
+  \path[thin] (a12) edge (a11);
+  \path[thin] (a11) edge (a8);
+  \path[thin] (a10) edge (a8);
+  \path[thin] (a7) edge (a6);
+  \path[thin] (a8) edge (a6);
+  \end{tikzpicture}
+  }
+  \caption{Main Graph} \label{fig:22a}
+  \end{subfigure}%
+ \begin{subfigure}[b]{0.3\textwidth}
+  \centering
+  \resizebox{0.9\textwidth}{!}{
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  \foreach \place/\x in {{(0,0)/1}, {(0,1)/2}}
+  \node[arn_n] (a\x) at \place {\x};
+  
+  
+  \node[arn_n] (a5) at (1,4.5) {5};
+  \node[arn_r] (a13) at (2,5) {13};
+  \node[arn_r] (a14) at (2,6) {14};
+  
+  
+  \node[arn_r] (a10) at (2,3) {10};
+  \node[arn_r] (a7) at (1.5,2) {7};
+  \node[arn_n] (a3) at (0,2) {3};
+  
+  \node[arn_r] (a9) at (1,3) {9};
+  \node[arn_r] (a12) at (2,4) {12};
+  \node[arn_n] (a4) at (0,3) {4};
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption{Alice's ancestors} \label{fig:22b}
+\end{subfigure}
+\begin{subfigure}[b]{0.3\textwidth}
+\centering
+  \resizebox{0.9\textwidth}{!}{
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+%   
+  \node[arn_n] (a6) at (2,1) {6};
+  \node[arn_r] (a7) at (1.5,2) {7};
+  \node[arn_n] (a8) at (2.5,2) {8};
+  \node[arn_r] (a9) at (1,3) {9};
+  \node[arn_r] (a10) at (2,3) {10};
+  \node[arn_n] (a11) at (3,3) {11};
+  \node[arn_r] (a12) at (2,4) {12};
+  \node[arn_r] (a13) at (2,5) {13};
+  \node[arn_r] (a14) at (2,6) {14};
+  
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+%   Bob history
+  \path[thin] (a12) edge (a11);
+  \path[thin] (a11) edge (a8);
+  \path[thin] (a10) edge (a8);
+  \path[thin] (a7) edge (a6);
+  \path[thin] (a8) edge (a6);
+  \end{tikzpicture}
+  }
+  \caption{Bob's ancestors} \label{fig:22c}
+\end{subfigure}
+\end{figure}
+\end{frame}
+
+
+\subsection{Hypothesis}
+\begin{frame}
+
+\begin{alertblock}{Hypothesis}
+ \begin{itemize}
+ \item \textbf{Each node has a hashable identifier}
+ \item \textbf{More than one biggest common ancestor}
+ \item \textbf{Any number of processes involved}
+\end{itemize}
+\end{alertblock}
+
+\begin{exampleblock}{Objectives}
+ \begin{itemize}
+ \item Compute the difference between two Dags
+  \item Optimized when the difference is small
+  \item Minimise the complexity on both processes
+  \item Minimise the quantity of information exchanged
+ \end{itemize}
+\end{exampleblock}
+\end{frame}
+
+\section{Results}
+
+\subsection{Algorithm}
+\begin{frame}
+ \begin{block}{definition}
+  \begin{itemize}
+   \item Making a partition of a DAG into different \textbf{slices}.
+   \item A slice $\mathcal S$ is paired with a \textbf{border} $\overline{ \mathcal S}$, such that $\forall x \in \mathcal S,\  \mathrm{pred}(x) \subset \mathcal S \cup \overline{\mathcal S}$
+  \end{itemize}
+   \end{block}
+ \begin{figure}[H]
+ 
+\centering
+\resizebox{!}{5 cm}{
+\begin{tikzpicture}
+\begin{scope}
+\coordinate[label=below:$Alice$] (A) at (0,0) ;
+\coordinate (B) at (4,10);
+\coordinate (C) at (-4,10);
+\draw [thick] (A) -- (B) coordinate[pos = 0.4] (B1) {} coordinate [pos = 0.42] (B1b) {} coordinate[pos = 0.7] (B2) {} coordinate[pos = 0.72] (B2b) {};
+\draw [thick] (B) -- (C) coordinate[pos = 0.5] (midBC) {};
+\draw [thick] (A) -- (C) coordinate[pos = 0.5] (C1) {} coordinate [pos = 0.52] (C1b) {} coordinate[pos = 0.8] (C2) {} coordinate[pos = 0.82] (C2b) {};
+\draw [thick, fill = LimeGreen,fill opacity = 0.5] (A) -- (B1) .. controls (1,3) and (-1,7) .. (C1) -- (A);
+\draw [thick, fill = green,fill opacity = 0.5] (B1) .. controls (1,3) and (-1,7) .. (C1) -- (C2) .. controls (-2,6) and (2,8) .. (B2) -- (B1);
+\draw [thick, fill = ForestGreen, fill opacity = 0.5] (C2) .. controls (-2,6) and (2,8) .. (B2) -- (B) -- (C) -- (C2);
+\draw [thick, fill = red, fill opacity = 1] (B1b) .. controls (1,3.1) and (-1,7.1) .. (C1b) -- (C1) .. controls (-1,7) and (1,3) .. (B1) -- (B1b);
+\draw [thick, fill = red, fill opacity = 1] (C2) .. controls (-2,6) and (2,8) .. (B2) -- (B2b) .. controls (2,8.1) and (-2,6.1) .. (C2b) -- (C2);
+\draw [draw = none] (A) -- (midBC) node[pos = 0.3] {$A_0$} node[pos = 0.6] {$A_1$} node[pos = 0.9] {$A_2$};
+
+\end{scope}
+\begin{scope}[shift={(4cm,0cm)}]
+\coordinate[label=below:$Bob$] (D) at (0,0);
+\coordinate (E) at (4,10);
+\coordinate (F) at (-4,10);
+\draw [thick] (D) -- (E) coordinate[pos = 0.5] (E1) {} coordinate [pos = 0.52] (E1b) {} coordinate[pos = 0.8] (E2) {} coordinate[pos = 0.82] (E2b) {};
+\draw [thick] (E) -- (F) coordinate[pos = 0.5] (midEF) {};
+\draw [thick] (D) -- (F) coordinate[pos = 0.3] (F1) {} coordinate [pos = 0.32] (F1b) {} coordinate[pos = 0.6] (F2) {} coordinate[pos = 0.62] (F2b) {};
+\draw [thick, fill = Cerulean,fill opacity = 0.5] (D) -- (E1) .. controls (1,3) and (-1,7) .. (F1) -- (D);
+\draw [thick, fill = blue,fill opacity = 0.5] (E1) .. controls (1,3) and (-1,7) .. (F1) -- (F2) .. controls (-2,6) and (2,8) .. (E2) -- (E1);
+\draw [thick, fill = SkyBlue, fill opacity = 0.5] (F2) .. controls (-2,6) and (2,8) .. (E2) -- (E) -- (F) -- (F2);
+\draw [thick, fill = red, fill opacity = 1] (E1b) .. controls (1,3.1) and (-1,7.1) .. (F1b) -- (F1) .. controls (-1,7) and (1,3) .. (E1) -- (E1b);
+\draw [thick, fill = red, fill opacity = 1] (F2) .. controls (-2,6) and (2,8) .. (E2) -- (E2b) .. controls (2,8.1) and (-2,6.1) .. (F2b) -- (F2);
+\draw [draw = none] (D) -- (midEF) node[pos = 0.3] {$B_0$} node[pos = 0.6] {$B_1$} node[pos = 0.9] {$B_2$};
+\end{scope}
+\end{tikzpicture}
+}
+\caption{Two processes sharing a part of their history and their decomposition in Slices and Borders} \label{fig:twoproc}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{Exploration}
+ \begin{exampleblock}{Signature}
+ \begin{lstlisting}
+  val next_ring : vertex list -> graph -> database -> database -> (graph * (vertex list))
+ \end{lstlisting}
+ \end{exampleblock}
+
+ \begin{block}{Idea of the algorithm}
+  \begin{enumerate}
+\setbeamercovered{transparent}
+\uncover<2-2>{\item The server receives a slice and all of the borders from a client}
+\uncover<3-3>{\item The server goes up in its history and stop whenever it crosses a node in the slice or in the border.
+ \begin{enumerate}
+  \item If it crosses a slice, the servor found a common ancestor with the client
+  \item It it crosses a border, exploration is stopped
+ \end{enumerate}
+ }
+\uncover<4-4>{\item The server computes the DAG $D$ of the successors of every nodes it found in slice.}
+\uncover<5-5>{\item The server computes a list of "nodes of interest" from which it shall start again the exploration.}
+\uncover<6-6>{\item The server sends back $D$ and the list of "nodes of interest"}
+\end{enumerate}
+ \end{block}
+
+%  val next_ring : vertex list -> graph list -> database -> database -> (graph * (vertex list))
+
+
+\end{frame}
+
+\begin{frame}
+\begin{figure}[H]
+\only<1>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  \foreach \place/\x in {{(0,0)/1}, {(0,1)/2}}
+  \node[arn_g] (a\x) at \place {\x};
+  
+  
+  \node[arn_pis] (a5) at (1,4.5) {5};
+  \node[arn_pis] (a13) at (2,5) {13};
+  \node[arn_pis] (a14) at (2,6) {14};
+  
+  
+  \node[arn_b] (a10) at (2,3) {10};
+  \node[arn_b] (a7) at (1.5,2) {7};
+  \node[arn_bs] (a3) at (0,2) {3};
+  
+  \node[arn_rs] (a9) at (1,3) {9};
+  \node[arn_rs] (a12) at (2,4) {12};
+  \node[arn_rs] (a4) at (0,3) {4};
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{Alice's ancestors}
+\end{subfigure}%
+}%
+\only<2>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+ \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  
+  
+  
+  \node[arn_r] (a1) at (0,0) {1};
+  \node[arn_r] (a2) at (0,1) {2};
+  
+  \node[arn_r] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_rs] (a14) at (2,6) {14};
+  
+  
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_y] (a7) at (1.5,2) {7};
+  \node[arn_r] (a3) at (0,2) {3};
+  
+  \node[arn_rs] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+  \node[arn_r] (a4) at (0,3) {4};
+  
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{Explore}
+\end{subfigure}%
+}%
+\only<3>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+ \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  
+  
+  
+  \node[arn_b] (a1) at (0,0) {1};
+  \node[arn_b] (a2) at (0,1) {2};
+  
+  \node[arn_n] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_rs] (a14) at (2,6) {14};
+  
+  
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_b] (a7) at (1.5,2) {7};
+  \node[arn_n] (a3) at (0,2) {3};
+  
+  \node[arn_rs] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+  \node[arn_n] (a4) at (0,3) {4};
+  
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{Deal with nodes in Slice}
+\end{subfigure}%
+}%
+\only<4>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+ \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  
+  
+
+  \node[arn_rb] (emph) at (0,2) {};
+  \node[arn_b] (a1) at (0,0) {1};
+  \node[arn_b] (a2) at (0,1) {2};
+  
+  \node[arn_n] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_n] (a14) at (2,6) {14};
+  
+  
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_b] (a7) at (1.5,2) {7};
+  \node[arn_b] (a3) at (0,2) {3};
+  
+  \node[arn_n] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+  \node[arn_n] (a4) at (0,3) {4};
+%   \node[cloud, fill=gray!20, cloud puffs=16, cloud puff arc= 100,minimum width=2em, minimum height=2em, aspect=1] (cloud) at (5,2) {};
+
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{Deal with nodes in Border}
+\end{subfigure}%
+}%
+\only<5>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+ \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  
+  
+  \node[arn_n] (a1) at (0,0) {1};
+  \node[arn_n] (a2) at (0,1) {2};
+  
+  \node[arn_r] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_rs] (a14) at (2,6) {14};
+  
+  
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_n] (a7) at (1.5,2) {7};
+  \node[arn_r] (a3) at (0,2) {3};
+  
+  \node[arn_t] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+  \node[arn_r] (a4) at (0,3) {4};
+%   \node[cloud, fill=gray!20, cloud puffs=16, cloud puff arc= 100,minimum width=2em, minimum height=2em, aspect=1] (cloud) at (5,2) {};
+
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{Explore}
+\end{subfigure}%
+}%
+\only<6>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+ \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  
+  
+  \node[arn_n] (a1) at (0,0) {1};
+  \node[arn_n] (a2) at (0,1) {2};
+  
+  \node[arn_n] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_rs] (a14) at (2,6) {14};
+  
+  
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_n] (a7) at (1.5,2) {7};
+  \node[arn_b] (a3) at (0,2) {3};
+  
+  \node[arn_b] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+  \node[arn_b] (a4) at (0,3) {4};
+%   \node[cloud, fill=gray!20, cloud puffs=16, cloud puff arc= 100,minimum width=2em, minimum height=2em, aspect=1] (cloud) at (5,2) {};
+
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{Deal with nodes in Slice}
+\end{subfigure}%
+}%
+\only<7>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+ \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  
+  \node[arn_rb] (emph) at (1,4.5) {};
+  \node[arn_n] (a1) at (0,0) {1};
+  \node[arn_n] (a2) at (0,1) {2};
+  
+  \node[arn_b] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_n] (a14) at (2,6) {14};
+  
+  
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_n] (a7) at (1.5,2) {7};
+  \node[arn_b] (a3) at (0,2) {3};
+  
+  \node[arn_b] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+  \node[arn_b] (a4) at (0,3) {4};
+%   \node[cloud, fill=gray!20, cloud puffs=16, cloud puff arc= 100,minimum width=2em, minimum height=2em, aspect=1] (cloud) at (5,2) {};
+
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{Deal with nodes in Border}
+\end{subfigure}%
+}%
+\only<8>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+ \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  
+  
+  \node[arn_n] (a1) at (0,0) {1};
+  \node[arn_n] (a2) at (0,1) {2};
+  
+  \node[arn_r] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_pu] (a14) at (2,6) {14};
+  
+  
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_n] (a7) at (1.5,2) {7};
+  \node[arn_n] (a3) at (0,2) {3};
+  
+  \node[arn_n] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+  \node[arn_n] (a4) at (0,3) {4};
+%   \node[cloud, fill=gray!20, cloud puffs=16, cloud puff arc= 100,minimum width=2em, minimum height=2em, aspect=1] (cloud) at (5,2) {};
+
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{Explore}
+\end{subfigure}%
+}%
+\only<9>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+ \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  
+  
+  \node[arn_n] (a1) at (0,0) {1};
+  \node[arn_n] (a2) at (0,1) {2};
+  
+  \node[arn_b] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_b] (a14) at (2,6) {14};
+  
+  
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_n] (a7) at (1.5,2) {7};
+  \node[arn_n] (a3) at (0,2) {3};
+  
+  \node[arn_n] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+  \node[arn_n] (a4) at (0,3) {4};
+%   \node[cloud, fill=gray!20, cloud puffs=16, cloud puff arc= 100,minimum width=2em, minimum height=2em, aspect=1] (cloud) at (5,2) {};
+
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{Deal with nodes in Slice}
+\end{subfigure}%
+}%
+\only<10>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+ \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  
+  
+  \node[arn_n] (a1) at (0,0) {1};
+  \node[arn_n] (a2) at (0,1) {2};
+  
+  \node[arn_b] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_b] (a14) at (2,6) {14};
+  
+  
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_n] (a7) at (1.5,2) {7};
+  \node[arn_n] (a3) at (0,2) {3};
+  
+  \node[arn_n] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+  \node[arn_n] (a4) at (0,3) {4};
+%   \node[cloud, fill=gray!20, cloud puffs=16, cloud puff arc= 100,minimum width=2em, minimum height=2em, aspect=1] (cloud) at (5,2) {};
+
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a9) edge (a4);
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{Deal with nodes in Border}
+\end{subfigure}%
+}%
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+%   
+  \node[arn_y] (a6) at (2,1) {6};
+  \node[arn_y] (a7) at (1.5,2) {7};
+  \node[arn_y] (a8) at (2.5,2) {8};
+  \node[arn_ts] (a9) at (1,3) {9};
+  \node[arn_ts] (a10) at (2,3) {10};
+  \node[arn_ts] (a11) at (3,3) {11};
+  \node[arn_pus] (a12) at (2,4) {12};
+  \node[arn_pu] (a13) at (2,5) {13};
+  \node[arn_pus] (a14) at (2,6) {14};
+  
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+%   Bob history
+  \path[thin] (a12) edge (a11);
+  \path[thin] (a11) edge (a8);
+  \path[thin] (a10) edge (a8);
+  \path[thin] (a7) edge (a6);
+  \path[thin] (a8) edge (a6);
+  \end{tikzpicture}
+  }
+  \caption*{Bob's ancestors}
+
+\end{subfigure}
+\end{figure}
+\end{frame}
+
+\subsection{Bloom Filters}
+\begin{frame}
+ \frametitle{Bloom Filters}
+ \begin{figure}[H]
+ \resizebox{\linewidth}{!}{
+\begin{tikzpicture}
+\tikzstyle{every path}=[very thick]
+
+\edef\sizehash{0.7cm}
+\tikzstyle{tmtape}=[draw,minimum size=\sizehash]
+
+\begin{scope}[start chain=2 going right,node distance= 0.5cm]
+    \node [on chain=2,tmtape,draw = none] {$S'=\{$};
+    \node [on chain = 2,tmtape,draw = none] (x0) {\textcolor{blue}{$x_0$}};
+    \node [on chain = 2,tmtape,draw = none] (x1) {\textcolor{green}{$x_1$}};
+    \node [on chain = 2,tmtape,draw = none] (x2) {\textcolor{red}{$x_2$}};
+    \node [on chain=2,tmtape,draw = none] {$\}$};
+\end{scope}
+
+\begin{scope}[shift={(-5cm,-2cm)},start chain=1 going right,node distance=-0.15mm]
+    \node [on chain=1,tmtape,draw = none] {$T_0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n0) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n1) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n2) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+\end{scope}
+
+\begin{scope}[shift={(-5cm,-4cm)},start chain=1 going right,node distance=-0.15mm]
+\node [on chain=1,tmtape,draw = none] {$T_1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n3) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n4) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+\end{scope}
+\begin{scope}[shift={(-5cm,-6cm)},start chain=1 going right,node distance=-0.15mm]
+\node [on chain=1,tmtape,draw = none] {$T_2$};
+    \node [on chain=1,tmtape] (n5) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n6) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] (n7) {$1$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+    \node [on chain=1,tmtape] {$0$};
+\end{scope}
+\begin{scope}[shift={(2cm,-8cm)},start chain=1 going right,node distance=-0.15mm]
+\node [on chain=1,tmtape,draw = none] (x) {$x$};
+\end{scope}
+
+\draw[->,blue,thick] (x0.south) to[out=270,in=90] node[midway,above] {$h_0$} (n0.north);
+\draw[->,blue,thick] (x0.south) to[out=270,in=90] node[midway,above] {$h_1$} (n3.north);
+\draw[->,blue,thick] (x0.south) to[out=270,in=90] node[midway,above] {$h_2$} (n7.north);
+\draw[->,green,thick] (x1.south) to[out=270,in=90] node[midway,above] {$h_0$} (n1.north);
+\draw[->,green,thick] (x1.south) to[out=270,in=90] node[midway,above] {$h_1$} (n3.north);
+\draw[->,green,thick] (x1.south) to[out=270,in=90] node[midway,above] {$h_2$} (n5.north);
+\draw[->,red,thick] (x2.south) to[out=270,in=90] node[midway,above] {$h_0$} (n2.north);
+\draw[->,red,thick] (x2.south) to[out=270,in=90] node[midway,above] {$h_1$} (n4.north);
+\draw[->,red,thick] (x2.south) to[out=270,in=90] node[midway,above] {$h_2$} (n6.north);
+
+
+\draw[->,magenta,thick] (x.north) to[out=90,in=270] node[midway,above] {$h_0$} (n2.south);
+\draw[->,magenta,thick] (x.north) to[out=90,in=270] node[midway,above] {$h_1$} (n3.south);
+\draw[->,magenta,thick] (x.north) to[out=90,in=270] node[midway,above] {$h_2$} (n6.south);
+\end{tikzpicture}
+}
+\caption{Inserting and testing the membership in a Bloom Filter, $x$ is a false positive} \label{fig:fp}
+\end{figure}
+\end{frame}
+
+\subsection{Asymptotic Behavior and False Positive}
+\frametitle{Asymptotic Behavior and False Positive}
+\begin{frame}
+ \begin{alertblock}{Size Grow indefinitely}
+  We drop $\frac{1}{4}$ of the Slices and Borders when too big (Half of last half). 
+  \begin{itemize}
+   \item Bounded Memory
+   \item Still efficient for small difference
+   \item Loss of efficient for big difference
+  \end{itemize}
+ \end{alertblock}
+ \begin{alertblock}{False Positive}
+ \begin{itemize}
+  \item In Slice : Client realizes directly and reask the server
+  \item In Borders : Client can not realize and send all Slices until it realizes
+ \end{itemize}
+
+\end{alertblock}
+\end{frame}
+
+\end{document}
