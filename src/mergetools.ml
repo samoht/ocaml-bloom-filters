@@ -7,7 +7,49 @@ sig
   val merge : u list -> t list -> u
   val mem : t -> u -> bool
 end
+exception No_more_bf;;
 
+module Compteur = 
+struct
+  let focus1 = ref (0)
+  let focus2 = ref (0)
+  let focus3 = ref (0)
+  let l1 = ref []
+  let l2 = ref [] 
+  let l3 = ref [] 
+  let database_compteur = Hashtbl.create 10
+  let new_compteur s = Hashtbl.add database_compteur s (ref 0)
+  let incr1 s =
+    let b = Hashtbl.find database_compteur s in
+    incr b
+  let incrn s n = 
+    let b = Hashtbl.find database_compteur s in
+    b := !b + n
+  let value s = 
+    !(Hashtbl.find database_compteur s)
+  let moyenne s n =
+    (float_of_int !(Hashtbl.find database_compteur s)) /. (float_of_int n)
+  let give_focus1 s =
+    focus1 := value s
+  let give_focus2 s =
+    focus2 := value s
+  let give_focus3 s =
+    focus3 := value s
+  let take_focus1 s =
+    let b = Hashtbl.find database_compteur s in
+    b := (!focus1)
+  let take_focus2 s =
+    let b = Hashtbl.find database_compteur s in
+    b := (!focus2)
+  let take_focus3 s =
+    let b = Hashtbl.find database_compteur s in
+    b := (!focus3)
+  let incrf1 () = incr focus1
+  let incrf2 () = incr focus2
+  let incrf3 () = incr focus3
+  let remove s = 
+    Hashtbl.remove database_compteur s
+end
 
 let hexa_to_binaire_char c s i = match c with
   |'0' -> s.[i] <- '0';s.[i+1] <- '0';s.[i+2] <-'0';s.[i+3] <- '0' 
@@ -144,6 +186,7 @@ struct
     in
     add_one nodel;
     {ancestor = g; bf = !rep; border = !repf}
+
   let next_ring node_list ancestor_list bf border = 
     let g = B.create () in
     let node_of_interest = ref [] in
@@ -162,6 +205,7 @@ struct
 (*
 	      Printf.printf "going up %s\n" (binaire_to_hexa (D.name node));
 	      flush stdout;*)
+	      Compteur.incrf3 ();
 	      Hashtbl.add explored node true;
 	      let is_in_bf = D.mem node bf in
 	      if (is_in_bf) then 
@@ -183,6 +227,7 @@ struct
 		      end
 	            else 
 		      begin
+			Compteur.incrf1 ();
 			B.iter_pred (fun x -> explore_one false x ancetre) (ancetre) node;
 		      end
 		  end
@@ -198,6 +243,7 @@ struct
 		  ()
 		else
 		  begin
+		    Compteur.incrf3 ();
 (*
 		    Printf.printf "going up %s\n" (binaire_to_hexa (D.name node));
 		    flush stdout;*)
@@ -222,6 +268,7 @@ struct
 			  end
 			else 
 			  begin
+			    Compteur.incrf1 ();
 			    B.iter_pred (fun x -> explore_one false x ancetre) (ancetre) node;
 			  end
 		      end
@@ -238,18 +285,21 @@ struct
       |[],[] -> ()
 	|_-> failwith "pas le même nombre"
     in
-      fst_rec node_list ancestor_list;
+    fst_rec node_list ancestor_list;
     
     let rec deal_with_bf node ancetre = 
       if Hashtbl.mem explored_down node then () else
 	begin
+	  Compteur.incrf3 ();
 	  Hashtbl.add explored_down node true;
 	  B.add_vertex g node;
 	  let add_edges_with_son son = 
 	    B.add_edge g node son
-	    in
-	  B.iter_succ add_edges_with_son (ancetre) node;
-	  B.iter_succ (fun x -> deal_with_bf x ancetre) (ancetre) node
+	  in
+	  Compteur.incrf2 ();
+	  let lson = B.succ ancetre node in
+	  List.iter (fun x -> add_edges_with_son x) lson;
+	  List.iter (fun x -> deal_with_bf x ancetre) lson;
 	end
     in
     let mark_down = Hashtbl.create 10 in
@@ -258,7 +308,9 @@ struct
 	  ()
 	else
 	  begin
+	    Compteur.incrf3 ();
 	    Hashtbl.add mark_down node true;
+	    Compteur.incrf2 ();
 	    let son = B.succ ancetre node in
 	    let rec keep_in_graphe l ing outg= match l with
 	      |p::q -> (if (B.mem_vertex g p) then (keep_in_graphe q (p::ing) outg) else (keep_in_graphe q ing (p::outg)))
@@ -465,6 +517,13 @@ struct
     let increase_width (state_init : t) (f : D.u -> D.u -> B.V.t list -> (B.V.t list * B.t)) (head : B.V.t) =
       (*Printf.printf "NEW BF\n";
       flush stdout;*)
+      Compteur.new_compteur "pred";
+      Compteur.new_compteur "succ";
+      Compteur.new_compteur "visite";
+      Compteur.give_focus1 "pred";
+      Compteur.give_focus2 "succ";      
+      Compteur.give_focus3 "visite";      
+      
       let bf = ref (state_init.bf) in
       let border_l_1,border_l_2 = split (state_init.border) [] [] in
       let border_l_ref = ref (border_l_2) in
@@ -495,7 +554,7 @@ struct
 	      end
 	    |[] -> failwith "impossible";
 	  end
-	|[] -> failwith "no more bloom filters"
+	|[] -> raise No_more_bf;
       done;
       let added_node_l = ref [] in
       let g node_in = 
@@ -503,8 +562,24 @@ struct
       in
       iter_graphe_from_high g (graph_rep) head;
       unif_graphe graph_rep (state_init.ancestor);
-
+      
+      Compteur.take_focus1 "pred";
+      Compteur.take_focus2 "succ";
+      Compteur.take_focus3 "visite";
       let statenew = add (!added_node_l) (state_init) (graph_rep) in
-
+      let n = ref 0 in
+      let diff node = 
+	if (B.mem_vertex state_init.ancestor node) then () else (incr n)
+      in
+      B.iter_vertex diff graph_rep;
+      (*Printf.printf "%d %d\n" (Compteur.value "pred") (n); *)
+      let f1 = Compteur.moyenne "pred" (!n) in
+      let f2 = Compteur.moyenne "succ" (!n) in
+      let f3 = Compteur.moyenne "visite" (!n) in
+      Compteur.l1 := f1 :: (!Compteur.l1);
+      Compteur.l2 := f2 :: (!Compteur.l2);
+      Compteur.l3 := f3 :: (!Compteur.l3);
+      Compteur.remove "pred";
+      Compteur.remove "succ";
       statenew,(!nb_turn);;
   end

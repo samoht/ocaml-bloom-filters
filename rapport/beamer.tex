@@ -22,7 +22,7 @@
 \providecommand{\DontPrintSemicolon}{\dontprintsemicolon}
 \author{Matthieu JOURNAULT}
 \date{July 2014}
-\title{Efficient synchronization of persistant DAGs
+\title{Efficient synchronization of persistent DAGs
 }
 \theoremstyle{definition}
 % \newtheorem{lemma}{Lemma}
@@ -116,7 +116,7 @@ decorate, decoration={
 \centering
  \begin{subfigure}[b]{0.3\textwidth}
   \centering
-  \resizebox{0.9\textwidth}{!}{
+  \resizebox{1\textwidth}{!}{
   \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
   thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
   
@@ -150,7 +150,7 @@ decorate, decoration={
   \end{subfigure}%
  \begin{subfigure}[b]{0.3\textwidth}
   \centering
-  \resizebox{0.9\textwidth}{!}{
+  \resizebox{0.8\textwidth}{!}{
   \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
   thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
   \foreach \place/\x in {{(0,0)/1}, {(0,1)/2}}
@@ -191,7 +191,7 @@ decorate, decoration={
 \end{subfigure}
 \begin{subfigure}[b]{0.3\textwidth}
 \centering
-  \resizebox{0.9\textwidth}{!}{
+  \resizebox{0.8\textwidth}{!}{
   \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
   thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
 %   
@@ -235,6 +235,7 @@ decorate, decoration={
  \item \textbf{Each node has a unique hashable identifier}
  \item \textbf{At least one biggest common ancestor}
  \item \textbf{Any number of processes involved}
+ \item \textbf{Predecessor easy to compute}
 \end{itemize}
 \end{alertblock}
 
@@ -255,7 +256,7 @@ decorate, decoration={
  \begin{block}{definition}
   \begin{itemize}
    \item Making a partition of a DAG into different \textbf{slices}.
-   \item A slice $\mathcal S$ is paired with a \textbf{border} $\overline{ \mathcal S}$, such that $\forall x \in \mathcal S,\  \mathrm{pred}(x) \subset \mathcal S \cup \overline{\mathcal S}$
+   \item A slice $\mathcal S$ is paired with a \textbf{border} $\overline{ \mathcal S}$, minimum set such that $\forall x \in \mathcal S,\  \mathrm{pred}(x) \subset \mathcal S \cup \overline{\mathcal S}$
   \end{itemize}
    \end{block}
  \begin{figure}[H]
@@ -303,7 +304,7 @@ decorate, decoration={
  \frametitle{Exploration}
  \begin{exampleblock}{Signature}
  \begin{lstlisting}
-  val explore : vertex list -> graph -> slice -> borders -> (graph * (vertex list))
+  val explore : graph -> vertex list -> slice -> borders -> (graph * (vertex list))
  \end{lstlisting}
  \end{exampleblock}
 
@@ -657,7 +658,7 @@ decorate, decoration={
   
   \node[arn_r] (a5) at (1,4.5) {5};
   \node[arn_n] (a13) at (2,5) {13};
-  \node[arn_pu] (a14) at (2,6) {14};
+  \node[arn_g] (a14) at (2,6) {14};
   
   
   \node[arn_n] (a10) at (2,3) {10};
@@ -754,13 +755,58 @@ decorate, decoration={
   
   \node[arn_n] (a10) at (2,3) {10};
   \node[arn_n] (a7) at (1.5,2) {7};
+  
+  \node[arn_n] (a3) at (0,2) {3};
+  
+  \node[arn_n] (a4) at (0,3) {4};
+  \node[arn_n] (a9) at (1,3) {9};
+  \node[arn_n] (a12) at (2,4) {12};
+%   \node[cloud, fill=gray!20, cloud puffs=16, cloud puff arc= 100,minimum width=2em, minimum height=2em, aspect=1] (cloud) at (5,2) {};
+
+  %   Alice history
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a5) edge (a4);
+    \path[thin] (a9) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+
+  \path[thin] (a7) edge (a2);
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+  \end{tikzpicture}
+  }
+  \caption*{[3] Deal with nodes in Border}
+\end{subfigure}%
+}%
+\only<11>{
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.6\textwidth}{!}{
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+  \foreach \place/\x in {{(0,0)/1}, {(0,1)/2}}
+  \node[arn_n] (a\x) at \place {\x};
+  
+  
+  \node[arn_n] (a5) at (1,4.5) {5};
+  \node[arn_n] (a13) at (2,5) {13};
+  \node[arn_n] (a14) at (2,6) {14};
+  
+  
+  \node[arn_n] (a10) at (2,3) {10};
+  \node[arn_n] (a7) at (1.5,2) {7};
   \node[arn_n] (a3) at (0,2) {3};
   
   \node[arn_n] (a9) at (1,3) {9};
   \node[arn_n] (a12) at (2,4) {12};
   \node[arn_n] (a4) at (0,3) {4};
-%   \node[cloud, fill=gray!20, cloud puffs=16, cloud puff arc= 100,minimum width=2em, minimum height=2em, aspect=1] (cloud) at (5,2) {};
-
   %   Alice history
   \path[thin] (a14) edge (a5);
   \path[thin] (a5) edge (a4);
@@ -779,9 +825,10 @@ decorate, decoration={
   \path[thin] (a10) edge (a7);
   \end{tikzpicture}
   }
-  \caption*{[3] Deal with nodes in Border}
+  \caption*{End of Exploration}
 \end{subfigure}%
 }%
+\only<1-4>{%
 \begin{subfigure}[b]{0.5\textwidth}
 \centering
   \resizebox{0.6\textwidth}{!}{
@@ -794,9 +841,9 @@ decorate, decoration={
   \node[arn_ts] (a9) at (1,3) {9};
   \node[arn_ts] (a10) at (2,3) {10};
   \node[arn_ts] (a11) at (3,3) {11};
-  \node[arn_pus] (a12) at (2,4) {12};
-  \node[arn_pu] (a13) at (2,5) {13};
-  \node[arn_pus] (a14) at (2,6) {14};
+  \node[arn_gs] (a12) at (2,4) {12};
+  \node[arn_g] (a13) at (2,5) {13};
+  \node[arn_gs] (a14) at (2,6) {14};
   
 %   both history
   \path[thin] (a14) edge (a13);
@@ -815,8 +862,150 @@ decorate, decoration={
   \end{tikzpicture}
   }
   \caption*{Bob's ancestors}
+\end{subfigure}%
+}%
+\only<5-7>{%
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.8\textwidth}{!}{
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+%  
+  \node[arn_n] (a1) at (0,0) {1};
+  \node[arn_n] (a2) at (0,1) {2};
+  \node[arn_n] (a3) at (0,2) {3};
+  
+  \node[arn_y] (a6) at (2,1) {6};
+  \node[arn_y] (a7) at (1.5,2) {7};
+  \node[arn_y] (a8) at (2.5,2) {8};
+  \node[arn_ts] (a9) at (1,3) {9};
+  \node[arn_ts] (a10) at (2,3) {10};
+  \node[arn_ts] (a11) at (3,3) {11};
+  \node[arn_gs] (a12) at (2,4) {12};
+  \node[arn_g] (a13) at (2,5) {13};
+  \node[arn_gs] (a14) at (2,6) {14};
+  
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+%   Bob history
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a7) edge (a2);
+  \path[thin] (a12) edge (a11);
+  \path[thin] (a11) edge (a8);
+  \path[thin] (a10) edge (a8);
+  \path[thin] (a7) edge (a6);
+  \path[thin] (a8) edge (a6);
+  \end{tikzpicture}
+  }
+  \caption*{Bob's ancestors}
+\end{subfigure}%
+}%
+\only<8-10>{%
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.8\textwidth}{!}{
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+%   
 
-\end{subfigure}
+  \node[arn_n] (a1) at (0,0) {1};
+  \node[arn_n] (a2) at (0,1) {2};
+  \node[arn_n] (a3) at (0,2) {3};
+  \node[arn_n] (a4) at (0,3) {4};
+  \node[arn_y] (a6) at (2,1) {6};
+  \node[arn_y] (a7) at (1.5,2) {7};
+  \node[arn_y] (a8) at (2.5,2) {8};
+  \node[arn_ts] (a9) at (1,3) {9};
+  \node[arn_ts] (a10) at (2,3) {10};
+  \node[arn_ts] (a11) at (3,3) {11};
+  \node[arn_gs] (a12) at (2,4) {12};
+  \node[arn_g] (a13) at (2,5) {13};
+  \node[arn_gs] (a14) at (2,6) {14};
+  
+  \node[arn_n] (a5) at (1,4.5) {5};
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+%   Bob history
+
+  \path[thin] (a5) edge (a4);
+    \path[thin] (a9) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a7) edge (a2);
+  \path[thin] (a12) edge (a11);
+  \path[thin] (a11) edge (a8);
+  \path[thin] (a10) edge (a8);
+  \path[thin] (a7) edge (a6);
+  \path[thin] (a8) edge (a6);
+  \end{tikzpicture}
+  }
+  \caption*{Bob's ancestors}
+\end{subfigure}%
+}%
+\only<11>{%
+\begin{subfigure}[b]{0.5\textwidth}
+\centering
+  \resizebox{0.8\textwidth}{!}{
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,
+  thick,main node/.style={circle,fill=blue!20,draw,font=\sffamily\Large\bfseries}]
+%   
+
+  \node[arn_n] (a1) at (0,0) {1};
+  \node[arn_n] (a2) at (0,1) {2};
+  \node[arn_n] (a3) at (0,2) {3};
+  \node[arn_n] (a4) at (0,3) {4};
+  \node[arn_y] (a6) at (2,1) {6};
+  \node[arn_y] (a7) at (1.5,2) {7};
+  \node[arn_y] (a8) at (2.5,2) {8};
+  \node[arn_ts] (a9) at (1,3) {9};
+  \node[arn_ts] (a10) at (2,3) {10};
+  \node[arn_ts] (a11) at (3,3) {11};
+  \node[arn_gs] (a12) at (2,4) {12};
+  \node[arn_g] (a13) at (2,5) {13};
+  \node[arn_gs] (a14) at (2,6) {14};
+  
+  \node[arn_n] (a5) at (1,4.5) {5};
+%   both history
+  \path[thin] (a14) edge (a13);
+  \path[thin] (a13) edge (a12);
+  \path[thin] (a12) edge (a9);
+  \path[thin] (a12) edge (a10);
+  
+  \path[thin] (a14) edge (a5);
+  \path[thin] (a9) edge (a7);
+  \path[thin] (a10) edge (a7);
+%   Bob history
+
+  \path[thin] (a5) edge (a4);
+    \path[thin] (a9) edge (a4);
+  \path[thin] (a4) edge (a3);
+  \path[thin] (a3) edge (a2);
+  \path[thin] (a2) edge (a1);
+  \path[thin] (a7) edge (a2);
+  \path[thin] (a12) edge (a11);
+  \path[thin] (a11) edge (a8);
+  \path[thin] (a10) edge (a8);
+  \path[thin] (a7) edge (a6);
+  \path[thin] (a8) edge (a6);
+  \end{tikzpicture}
+  }
+  \caption*{Bob's ancestors}
+\end{subfigure}%
+}%
 \end{figure}
 \end{frame}
 
@@ -941,7 +1130,7 @@ decorate, decoration={
   \begin{itemize}
    \item Bounded Memory
    \item Still efficient for small difference
-   \item Loss of efficient for big difference
+   \item Loss of efficiency for big difference
   \end{itemize}
  \end{alertblock}
  \begin{alertblock}{False Positive}
@@ -957,7 +1146,9 @@ decorate, decoration={
 \begin{frame}
 \frametitle{Evaluation}
  \begin{figure}[H]
-  \includegraphics[height=7cm]{./image/slicesent/Nb_sent_slice.png}
+ \centering
+  \includegraphics[height=6cm]{./image/slicesent/Nb_sent_slice.png}
+  \caption{Graph of 1000 nodes with Slices of size 200}
  \end{figure}
 \end{frame}
 
@@ -965,8 +1156,8 @@ decorate, decoration={
 \begin{frame}
  \begin{exampleblock}{Conclusion}
   \begin{itemize}
-   \item Very few false positive
-   \item A small amount of information exchanged (an average of $20\times 320 \times 1.3$ bits in our example)
+   \item Fine control over false positive
+   \item A small amount of information exchanged (an average of $20\times 320 \times 1.1 = 7040$ bits in our example)
    \item A fast and incremental method on the client side, a linear (in the size of the difference) complexity on the server side.
    \item The server is memory free regarding a particular client.
   \end{itemize}

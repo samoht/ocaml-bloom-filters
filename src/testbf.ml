@@ -191,7 +191,9 @@ let compute_hist_diff g e1 e2 =
 
 module Database =
 struct
+
   let known = (let rep = Hashtbl.create 10 in Hashtbl.add rep "" (Truc.empty_state ()); rep)
+  let init () = Hashtbl.reset known; Hashtbl.add known "" (Truc.empty_state ())
   let add k v = Hashtbl.add known k v
   let f bf bd l=
     let rec ancl l accu = match l with
@@ -261,6 +263,7 @@ end;;
 module MyDot = Graph.Graphviz.Dot(ToDot);;
 
 let simule2 g beg =
+  Database.init ();
   let left_before = Hashtbl.create 10 in
   let tovisite = ref [beg] in
   let visited = Hashtbl.create 10 in
@@ -270,7 +273,7 @@ let simule2 g beg =
   let truenb = ref 0 in
   let visite node = 
     incr truenb;
-    Printf.printf "%d visiting %s\n" (!truenb) (binaire_to_hexa node);
+    (**Printf.printf "%d visiting %s\n" (!truenb) (binaire_to_hexa node);*)
     let peres = MyGraph.pred g node in
     if (peres <> [])  then 
       begin
@@ -953,19 +956,79 @@ let compute_min repa repb n =
   done;
   rep;;
 
-let main4 () =
+let moyennefl l = 
+  let sum = ref 0. in
+  let rec parc l compt = match l with
+    |p::q ->Printf.printf "%f\n" p ; sum := p +. !sum; parc q (compt+1)
+    |[] -> compt
+  in
+  let n = parc l 0 in
+  let rep = (!sum)/. (float_of_int n) in
+  Printf.printf "moyenne = %f\n" rep;
+  rep;;
   
-  for k = 1 to 8 do
+let main4 () =
+  Random.init 7;
+  let coutcomp = open_out ("resultatcomp/comp") in
+  for s = 2 to 20 do
+    let la1 = ref [] in
+    let la2 = ref [] in
+    let la3 = ref [] in
+    for k = 1 to 10 do
+      let g,b = DagGen.alea (s*100) (s*10) 160 0 (0.6) in
+      let f = 
+	try simule2 g b 
+	with
+	|Mergetools.No_more_bf -> 0.
+      in
+      let f1,f2,f3 = (moyennefl (!Mergetools.Compteur.l1),moyennefl (!Mergetools.Compteur.l2),moyennefl (!Mergetools.Compteur.l3)) in
+      Mergetools.Compteur.l3 := [];
+      Mergetools.Compteur.l2 := [];
+      Mergetools.Compteur.l1 := [];
+      la1 := f1 :: !(la1);
+      la2 := f2 :: !(la2);
+      la3 := f3 :: !(la3);
+    (*
+      let htbl = compute_old_bf g 160 in
+      let num = ref 0 in
+	(*let nbc = ref 0 in*)
+	let compt = ref 0 in
+	let deal_with_couple a b =
+	if (!compt mod 100 = 0) then (Printf.printf "[Computing BCA and NUM] %d/100 \n" (!compt/100); flush stdout;);
+	incr compt;
+	let m = compute_min (Hashtbl.find htbl a) (Hashtbl.find htbl b) 160 in
+	let nb_under_min = find_under m htbl in
+	(*let nb_bca= compute_bca g a b in*)
+	num := !num + nb_under_min;
+      (*nbc := !nbc + nb_bca;*)
+	MyGraph.iter_vertex (fun x -> (MyGraph.iter_vertex (fun y -> deal_with_couple x y) g)) g;*)
+      (*Printf.fprintf coutbca "%f %f\n" (float_of_int p /. 10.) (float_of_int (!nbc) /. 10000.);*)
+      Printf.printf "%d %d %f\n" s k f1;
+    done;
+    
+    Printf.fprintf coutcomp "%f %f %f %f\n" (float_of_int (s*100) /. 200.) (moyennefl (!la1)) (moyennefl (!la2)) (moyennefl (!la3));
+  done;
+  close_out coutcomp;;
+(*
+  for k = 2 to 8 do
   
     (*let coutbca = open_out ("resultprem/bca"^(string_of_int k)) in*)
     let cout = open_out ("resultslice/high"^(string_of_int k)) in
+    let coutcomp = open_out ("resultslice/comphigh"^(string_of_int k)) in
+    Random.init 1;
     for p = 1 to 10 do
-      let g,b = DagGen.alea 100 (k*10) 160 0 ((float_of_int p)/.10.) in
-
-      let file = open_out_bin ("test.dot") in
-      MyDot.output_graph file g;
-      let f = simule2 g b in
-(*
+      
+      let g,b = DagGen.alea 1000 (k*100) 160 0 ((float_of_int p)/.10.) in
+      let f = 
+	try simule2 g b 
+	with
+	|Mergetools.No_more_bf -> 0.
+      in
+      let f1,f2,f3 = (moyennefl (!Mergetools.Compteur.l1),moyennefl (!Mergetools.Compteur.l2),moyennefl (!Mergetools.Compteur.l3)) in
+      Mergetools.Compteur.l3 := [];
+      Mergetools.Compteur.l2 := [];
+      Mergetools.Compteur.l1 := [];
+      (*
       let htbl = compute_old_bf g 160 in
       let num = ref 0 in
       (*let nbc = ref 0 in*)
@@ -979,13 +1042,16 @@ let main4 () =
 	num := !num + nb_under_min;
 	(*nbc := !nbc + nb_bca;*)
       MyGraph.iter_vertex (fun x -> (MyGraph.iter_vertex (fun y -> deal_with_couple x y) g)) g;*)
-      Printf.printf "%d %d\n" k p;
+      Printf.printf "[%d %d -> %f %f %f]\n" k p f1 f2 f3;
       (*Printf.fprintf coutbca "%f %f\n" (float_of_int p /. 10.) (float_of_int (!nbc) /. 10000.);*)
+      Printf.fprintf coutcomp "%f %f %f %f\n" (float_of_int p /. 10.) f1 f2 f3;
       Printf.fprintf cout "%f %f\n" (float_of_int p /. 10.) f;
     done;
     (*close_out coutbca;*)
   close_out cout;
-  done;;
+  close_out coutcomp;
+  done
+*)
 
 main4 ();;
     

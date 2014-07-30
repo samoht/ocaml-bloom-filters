@@ -14,7 +14,7 @@ sig
       the storage *)
   val mem : t -> u -> bool
 end
-  
+exception No_more_bf
   
 module Make :
   functor (B : Graph.Sig.I) ->
@@ -46,3 +46,9 @@ sig
 
 end
       
+module Compteur :
+sig
+  val l1 : (float list) ref
+  val l2 : (float list) ref
+  val l3 : (float list) ref
+end

@@ -18,7 +18,7 @@
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \providecommand{\SetAlgoLined}{\SetLine}
 \providecommand{\DontPrintSemicolon}{\dontprintsemicolon}
-\title{Efficient synchronization of persistant DAGs}
+\title{Efficient synchronization of persistent DAGs}
 \author{Matthieu JOURNAULT}
 \date{24/06/2013}
 \theoremstyle{definition}
@@ -31,7 +31,7 @@
 \usetikzlibrary{decorations.pathmorphing}
 \usetikzlibrary{arrows}
 \usetikzlibrary{chains,fit,shapes}
-\usepackage{fullpage}
+% \usepackage{fullpage}
 \definecolor{turquoise}{RGB}{255,127,0}
 \tikzset{
   treenode/.style = {align=center, inner sep=0pt, text centered,
@@ -124,6 +124,7 @@ Irmin is a database designed to run in distributed, decentralised settings. Irmi
 \section{Hash Functions}
 \input{hash.tex}
 \section{Evaluation}
+\input{eval.tex}
 \chapter{Conclusion and bibliography}
 %   \input{biblio.tex}
 \chapter{Appendix}
