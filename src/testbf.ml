@@ -1,3 +1,21 @@
+(******************************************)
+module Evaluation = 
+struct
+  let seed = 42
+  let pred = false
+  let succ = false
+  let visite = false
+  let slice = false
+  let sol = [|0.;0.;0.;0.|]
+end
+(******************************************)
+
+
+
+
+
+
+
 module Comparable : Graph.Sig.COMPARABLE with type t = string = struct
   type t = string
   let compare = Pervasives.compare
@@ -25,6 +43,19 @@ struct
   type t = string
   let equal = (=)
 end
+
+let moyennefl l = 
+  let sum = ref 0. in
+  let rec parc l compt = match l with
+    |p::q ->Printf.printf "%f\n" p ; sum := p +. !sum; parc q (compt+1)
+    |[] -> compt
+  in
+  let n = parc l 0 in
+  let rep = (!sum)/. (float_of_int n) in
+  Printf.printf "moyenne = %f\n" rep;
+  rep;;
+
+
 let is_char_in_string_n m c s =
   let n = String.length s in
   let i = ref 0 in
@@ -262,8 +293,16 @@ end;;
 
 module MyDot = Graph.Graphviz.Dot(ToDot);;
 
+
+
+
+
 let simule2 g beg =
   Database.init ();
+  Mergetools.Compteur.b1 := Evaluation.pred;
+  Mergetools.Compteur.b2 := Evaluation.pred;
+  Mergetools.Compteur.b3 := Evaluation.pred;
+
   let left_before = Hashtbl.create 10 in
   let tovisite = ref [beg] in
   let visited = Hashtbl.create 10 in
@@ -328,7 +367,13 @@ let simule2 g beg =
 	visite p;
       end
   done;
-  (float_of_int !moyenne) /. (float_of_int !nb_tot)
+  if (Evaluation.slice) then (Evaluation.sol.(3) <- ((float_of_int !moyenne) /. (float_of_int !nb_tot)));
+  if (Evaluation.pred) then (Evaluation.sol.(0) <- moyennefl (!Mergetools.Compteur.l1));
+  if (Evaluation.succ) then (Evaluation.sol.(0) <- moyennefl (!Mergetools.Compteur.l2));
+  if (Evaluation.visite) then (Evaluation.sol.(0) <- moyennefl (!Mergetools.Compteur.l3));
+  Mergetools.Compteur.l3 := [];
+  Mergetools.Compteur.l2 := [];
+  Mergetools.Compteur.l1 := [];
 ;;
 (*
 let simule g beg =
@@ -573,7 +618,7 @@ let iter_graphe_from_high f g start =
     to_visite := q;
     visite_node p
   done;;
-
+(*
 let main () = 
   let size_graphe = 1000 in 
   let prof_max = 800 in 
@@ -955,60 +1000,18 @@ let compute_min repa repb n =
     rep.(i) <- min (repa.(i)) (repb.(i))
   done;
   rep;;
+*)
 
-let moyennefl l = 
-  let sum = ref 0. in
-  let rec parc l compt = match l with
-    |p::q ->Printf.printf "%f\n" p ; sum := p +. !sum; parc q (compt+1)
-    |[] -> compt
-  in
-  let n = parc l 0 in
-  let rep = (!sum)/. (float_of_int n) in
-  Printf.printf "moyenne = %f\n" rep;
-  rep;;
-  
 let main4 () =
-  Random.init 7;
-  let coutcomp = open_out ("resultatcomp/comp") in
+  Random.init Evaluation.seed;
   for s = 2 to 20 do
-    let la1 = ref [] in
-    let la2 = ref [] in
-    let la3 = ref [] in
     for k = 1 to 10 do
       let g,b = DagGen.alea (s*100) (s*10) 160 0 (0.6) in
-      let f = 
-	try simule2 g b 
-	with
-	|Mergetools.No_more_bf -> 0.
-      in
-      let f1,f2,f3 = (moyennefl (!Mergetools.Compteur.l1),moyennefl (!Mergetools.Compteur.l2),moyennefl (!Mergetools.Compteur.l3)) in
-      Mergetools.Compteur.l3 := [];
-      Mergetools.Compteur.l2 := [];
-      Mergetools.Compteur.l1 := [];
-      la1 := f1 :: !(la1);
-      la2 := f2 :: !(la2);
-      la3 := f3 :: !(la3);
-    (*
-      let htbl = compute_old_bf g 160 in
-      let num = ref 0 in
-	(*let nbc = ref 0 in*)
-	let compt = ref 0 in
-	let deal_with_couple a b =
-	if (!compt mod 100 = 0) then (Printf.printf "[Computing BCA and NUM] %d/100 \n" (!compt/100); flush stdout;);
-	incr compt;
-	let m = compute_min (Hashtbl.find htbl a) (Hashtbl.find htbl b) 160 in
-	let nb_under_min = find_under m htbl in
-	(*let nb_bca= compute_bca g a b in*)
-	num := !num + nb_under_min;
-      (*nbc := !nbc + nb_bca;*)
-	MyGraph.iter_vertex (fun x -> (MyGraph.iter_vertex (fun y -> deal_with_couple x y) g)) g;*)
-      (*Printf.fprintf coutbca "%f %f\n" (float_of_int p /. 10.) (float_of_int (!nbc) /. 10000.);*)
-      Printf.printf "%d %d %f\n" s k f1;
+      try simule2 g b 
+      with
+      |Mergetools.No_more_bf -> ()
     done;
-    
-    Printf.fprintf coutcomp "%f %f %f %f\n" (float_of_int (s*100) /. 200.) (moyennefl (!la1)) (moyennefl (!la2)) (moyennefl (!la3));
-  done;
-  close_out coutcomp;;
+  done;;
 (*
   for k = 2 to 8 do
   

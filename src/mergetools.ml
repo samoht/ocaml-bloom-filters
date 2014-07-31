@@ -11,6 +11,9 @@ exception No_more_bf;;
 
 module Compteur = 
 struct
+  let b1 = ref false
+  let b2 = ref false
+  let b3 = ref false
   let focus1 = ref (0)
   let focus2 = ref (0)
   let focus3 = ref (0)
@@ -205,7 +208,7 @@ struct
 (*
 	      Printf.printf "going up %s\n" (binaire_to_hexa (D.name node));
 	      flush stdout;*)
-	      Compteur.incrf3 ();
+	      if !Compteur.b3 then (Compteur.incrf3 ());
 	      Hashtbl.add explored node true;
 	      let is_in_bf = D.mem node bf in
 	      if (is_in_bf) then 
@@ -227,7 +230,7 @@ struct
 		      end
 	            else 
 		      begin
-			Compteur.incrf1 ();
+			if (!Compteur.b1) then (Compteur.incrf1 ());
 			B.iter_pred (fun x -> explore_one false x ancetre) (ancetre) node;
 		      end
 		  end
@@ -243,7 +246,7 @@ struct
 		  ()
 		else
 		  begin
-		    Compteur.incrf3 ();
+		    if (!Compteur.b3) then (Compteur.incrf3 ());
 (*
 		    Printf.printf "going up %s\n" (binaire_to_hexa (D.name node));
 		    flush stdout;*)
@@ -268,7 +271,7 @@ struct
 			  end
 			else 
 			  begin
-			    Compteur.incrf1 ();
+			    if (!Compteur.b1) then (Compteur.incrf1 ());
 			    B.iter_pred (fun x -> explore_one false x ancetre) (ancetre) node;
 			  end
 		      end
@@ -290,13 +293,13 @@ struct
     let rec deal_with_bf node ancetre = 
       if Hashtbl.mem explored_down node then () else
 	begin
-	  Compteur.incrf3 ();
+	  if !Compteur.b3 then (Compteur.incrf3 ());
 	  Hashtbl.add explored_down node true;
 	  B.add_vertex g node;
 	  let add_edges_with_son son = 
 	    B.add_edge g node son
 	  in
-	  Compteur.incrf2 ();
+	  if !Compteur.b2 then (Compteur.incrf2 ());
 	  let lson = B.succ ancetre node in
 	  List.iter (fun x -> add_edges_with_son x) lson;
 	  List.iter (fun x -> deal_with_bf x ancetre) lson;
@@ -308,9 +311,9 @@ struct
 	  ()
 	else
 	  begin
-	    Compteur.incrf3 ();
+	    if !Compteur.b3 then (Compteur.incrf3 ());
 	    Hashtbl.add mark_down node true;
-	    Compteur.incrf2 ();
+	    if !Compteur.b2 then (Compteur.incrf2 ());
 	    let son = B.succ ancetre node in
 	    let rec keep_in_graphe l ing outg= match l with
 	      |p::q -> (if (B.mem_vertex g p) then (keep_in_graphe q (p::ing) outg) else (keep_in_graphe q ing (p::outg)))
@@ -517,12 +520,12 @@ struct
     let increase_width (state_init : t) (f : D.u -> D.u -> B.V.t list -> (B.V.t list * B.t)) (head : B.V.t) =
       (*Printf.printf "NEW BF\n";
       flush stdout;*)
-      Compteur.new_compteur "pred";
-      Compteur.new_compteur "succ";
-      Compteur.new_compteur "visite";
-      Compteur.give_focus1 "pred";
-      Compteur.give_focus2 "succ";      
-      Compteur.give_focus3 "visite";      
+      if !Compteur.b1 then (Compteur.new_compteur "pred");
+      if !Compteur.b2 then (Compteur.new_compteur "succ");
+      if !Compteur.b3 then (Compteur.new_compteur "visite");
+      if !Compteur.b1 then (Compteur.give_focus1 "pred");
+      if !Compteur.b2 then (Compteur.give_focus2 "succ");      
+      if !Compteur.b3 then (Compteur.give_focus3 "visite");      
       
       let bf = ref (state_init.bf) in
       let border_l_1,border_l_2 = split (state_init.border) [] [] in
@@ -563,9 +566,9 @@ struct
       iter_graphe_from_high g (graph_rep) head;
       unif_graphe graph_rep (state_init.ancestor);
       
-      Compteur.take_focus1 "pred";
-      Compteur.take_focus2 "succ";
-      Compteur.take_focus3 "visite";
+      if !Compteur.b1 then (Compteur.take_focus1 "pred");
+      if !Compteur.b2 then (Compteur.take_focus2 "succ");
+      if !Compteur.b3 then (Compteur.take_focus3 "visite");
       let statenew = add (!added_node_l) (state_init) (graph_rep) in
       let n = ref 0 in
       let diff node = 
@@ -573,13 +576,12 @@ struct
       in
       B.iter_vertex diff graph_rep;
       (*Printf.printf "%d %d\n" (Compteur.value "pred") (n); *)
-      let f1 = Compteur.moyenne "pred" (!n) in
-      let f2 = Compteur.moyenne "succ" (!n) in
-      let f3 = Compteur.moyenne "visite" (!n) in
-      Compteur.l1 := f1 :: (!Compteur.l1);
-      Compteur.l2 := f2 :: (!Compteur.l2);
-      Compteur.l3 := f3 :: (!Compteur.l3);
-      Compteur.remove "pred";
-      Compteur.remove "succ";
+      if !Compteur.b1 then (let f1 = Compteur.moyenne "pred" (!n) in Compteur.l1 := f1 :: (!Compteur.l1);Compteur.remove "pred");
+      if !Compteur.b2 then (let f2 = Compteur.moyenne "succ" (!n) in Compteur.l2 := f2 :: (!Compteur.l2);Compteur.remove "succ");
+      if !Compteur.b3 then (let f3 = Compteur.moyenne "visite" (!n) in Compteur.l3 := f3 :: (!Compteur.l3);Compteur.remove "visite");
+      
+      
+      
+      
       statenew,(!nb_turn);;
   end

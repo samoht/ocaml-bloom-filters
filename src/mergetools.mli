@@ -48,6 +48,9 @@ end
       
 module Compteur :
 sig
+  val b1 : bool ref
+  val b2 : bool ref
+  val b3 : bool ref
   val l1 : (float list) ref
   val l2 : (float list) ref
   val l3 : (float list) ref
