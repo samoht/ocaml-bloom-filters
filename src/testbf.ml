@@ -2,9 +2,9 @@
 module Evaluation = 
 struct
   let seed = 42
-  let pred = false
-  let succ = false
-  let visite = false
+  let pred = true
+  let succ = true
+  let visite = true
   let slice = false
   let sol = [|0.;0.;0.;0.|]
 end
@@ -47,12 +47,11 @@ end
 let moyennefl l = 
   let sum = ref 0. in
   let rec parc l compt = match l with
-    |p::q ->Printf.printf "%f\n" p ; sum := p +. !sum; parc q (compt+1)
+    |p::q ->sum := p +. !sum; parc q (compt+1)
     |[] -> compt
   in
   let n = parc l 0 in
   let rep = (!sum)/. (float_of_int n) in
-  Printf.printf "moyenne = %f\n" rep;
   rep;;
 
 
@@ -300,8 +299,8 @@ module MyDot = Graph.Graphviz.Dot(ToDot);;
 let simule2 g beg =
   Database.init ();
   Mergetools.Compteur.b1 := Evaluation.pred;
-  Mergetools.Compteur.b2 := Evaluation.pred;
-  Mergetools.Compteur.b3 := Evaluation.pred;
+  Mergetools.Compteur.b2 := Evaluation.succ;
+  Mergetools.Compteur.b3 := Evaluation.visite;
 
   let left_before = Hashtbl.create 10 in
   let tovisite = ref [beg] in
@@ -310,7 +309,9 @@ let simule2 g beg =
   let moyenne = ref 0 in
   let nb_tot = ref 0 in
   let truenb = ref 0 in
+  let compte = ref 0 in
   let visite node = 
+    Hashtbl.add visited node true;
     incr truenb;
     (**Printf.printf "%d visiting %s\n" (!truenb) (binaire_to_hexa node);*)
     let peres = MyGraph.pred g node in
@@ -322,12 +323,15 @@ let simule2 g beg =
 	  |p::q -> 
 	    begin
 	      incr nb_tot;
+	      incr compte;
+	      (*Printf.printf "<Increase_width %d>\n" (!compte);*)
 	      let newst,nb_turn = Truc.increase_width (!state_fin) Database.f p in
+(*	      Printf.printf "<\Increase_width %d>\n" (!compte);*)
 	      state_fin := newst;
 	      moyenne := !moyenne + nb_turn;
 	      width q
 	    end
-	  |[] -> state_fin := Truc.increase_high (!state_fin) peres node
+	  |[] -> (*Printf.printf "<Increase_high %d>\n" (!compte);*)state_fin := Truc.increase_high (!state_fin) peres node;(*Printf.printf "<\Increase_high %d>\n" (!compte);*)
 	in
 	width q;
 	Database.astate node (!state_fin)
@@ -369,8 +373,8 @@ let simule2 g beg =
   done;
   if (Evaluation.slice) then (Evaluation.sol.(3) <- ((float_of_int !moyenne) /. (float_of_int !nb_tot)));
   if (Evaluation.pred) then (Evaluation.sol.(0) <- moyennefl (!Mergetools.Compteur.l1));
-  if (Evaluation.succ) then (Evaluation.sol.(0) <- moyennefl (!Mergetools.Compteur.l2));
-  if (Evaluation.visite) then (Evaluation.sol.(0) <- moyennefl (!Mergetools.Compteur.l3));
+  if (Evaluation.succ) then (Evaluation.sol.(1) <- moyennefl (!Mergetools.Compteur.l2));
+  if (Evaluation.visite) then (Evaluation.sol.(2) <- moyennefl (!Mergetools.Compteur.l3));
   Mergetools.Compteur.l3 := [];
   Mergetools.Compteur.l2 := [];
   Mergetools.Compteur.l1 := [];
@@ -994,7 +998,7 @@ let find_under min h =
   Hashtbl.iter deal_with_one h;
   !rep;;
 
-let compute_min repa repb n =
+ et compute_min repa repb n =
   let rep = Array.make n 0 in
   for i = 0 to (n-1) do
     rep.(i) <- min (repa.(i)) (repb.(i))
@@ -1004,14 +1008,37 @@ let compute_min repa repb n =
 
 let main4 () =
   Random.init Evaluation.seed;
-  for s = 2 to 20 do
-    for k = 1 to 10 do
-      let g,b = DagGen.alea (s*100) (s*10) 160 0 (0.6) in
-      try simule2 g b 
+  let sizeh = 160 in
+  let high = 400 in
+  let seed = 0 in
+  let coef = 0.3 in
+  let size = 1000 in
+  let nb_val = 10 in
+
+  let rep = Array.make_matrix 10 3 0. in
+  for i = 0 to (nb_val -1) do
+    for k = 1 to 9 do
+      Printf.printf "Starting\n";
+      flush stdout;
+      let g,b = DagGen.alea (1000) (400) 160 (Random.int 50) ((float_of_int k) /. float_of_int nb_val) in
+    
+      try (simule2 g b; Printf.printf "Ending\n";flush stdout;Printf.printf "%d %f %f %f\n" k (Evaluation.sol.(0)) (Evaluation.sol.(1)) (Evaluation.sol.(2));flush stdout;rep.(k).(0) <- rep.(k).(0) +. Evaluation.sol.(0);rep.(k).(1) <- rep.(k).(1) +. Evaluation.sol.(1);rep.(k).(2) <- rep.(k).(2) +. Evaluation.sol.(2))
       with
-      |Mergetools.No_more_bf -> ()
+      |Mergetools.No_more_bf -> () ;
     done;
-  done;;
+  done;
+  for i = 0 to 9 do
+    for k = 0 to 2 do
+      rep.(i).(k) <- rep.(i).(k) /. (float_of_int nb_val);
+    done;
+  done;
+  let s = Printf.sprintf "resmoy/res_%d_%d_%d_%d_0.1<f<0.9" size high sizeh seed in
+  let cout = open_out s in
+  for i = 2 to 9 do
+    Printf.fprintf cout "%f %f %f %f\n" (((float_of_int i) /. float_of_int nb_val)) (rep.(i).(0)) (rep.(i).(1)) (rep.(i).(2));
+  done;
+  close_out cout;
+;;
 (*
   for k = 2 to 8 do
   
