@@ -2,7 +2,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage{lmodern}
-% \usetheme{Singapore}
+\usetheme{Singapore}
 \usepackage{subcaption}
 \usepackage{fontenc}
 \usepackage{graphicx}
@@ -108,6 +108,64 @@ decorate, decoration={
 \begin{frame}
  \tableofcontents
 \end{frame}
+\section{Internship context}
+\begin{frame}
+ \frametitle{Cambridge}
+ \begin{figure}[H]
+  \includegraphics[width= \textwidth]{./image/cambridge/punting.jpg}
+ \end{figure}
+\end{frame}
+
+\begin{frame}
+ \frametitle{Computer Lab}
+ \begin{figure}[H]
+  \includegraphics[width= \textwidth]{./image/cambridge/complab.jpg}
+ \end{figure}
+\end{frame}
+
+\begin{frame}
+ \frametitle{Computer Lab organization}
+ \begin{figure}[H]
+  \begin{tikzpicture}
+   \node[circle,draw = red,text = red] (n0) at (0,0) {\tiny{Computer Lab}};
+   \node[circle,draw = black] (n1) at (45:2.5 cm) {\tiny{\shor	tstack{Artificial\\Intelligence}}};
+   \node[circle,draw = black] (n2) at (-45:2.5 cm) {\tiny{\shortstack{Computer\\Architecture}}};
+   \node[circle,draw = red,text = red] (n3) at (0:2.5 cm) {\tiny{\shortstack{System\\Research}}};
+   \node[circle,draw = black] (n4) at (90:2.5 cm) {\tiny{\shortstack{Digital\\Technology}}};
+   \node[circle,draw = black] (n5) at (135:2.5 cm) {\tiny{\shortstack{Rainbow\\Group}}};
+   \node[circle,draw = black] (n6) at (-90:2.5 cm) {\tiny{\shortstack{Security\\Group}}};
+   \node[circle,draw = black] (n7) at (-135:2.5 cm) {\tiny{\shortstack{Programming\\Logic\\Semantic}}};
+   \node[circle,draw = black] (n8) at (180:2.5 cm) {\tiny{\shortstack{Natural language\\Information Processing}}};
+
+   \begin{scope}[shift=(0:2.5 cm)]
+    \node[circle,draw = black] (n9) at (45:2.5 cm) {\tiny{\shortstack{Opera}}};
+    \node[circle,draw = red,text = red] (n10) at (0:2.5 cm) {\tiny{\shortstack{NetOS}}};
+    \node[circle,draw = black] (n11) at (-45:2.5 cm) {\tiny{\shortstack{Home area\\networking}}};
+   \end{scope}
+   \begin{scope}[shift=(0:5 cm)]
+    \node[rectangle,draw = red,text = red] (n12) at (0:1.5 cm) {\tiny{\shortstack{MirageOS}}};
+   \end{scope}
+   \begin{scope}[shift=(0:6.5 cm)]
+    \node[rectangle,draw = red,text = red] (n13) at (-90:1.5 cm) {\tiny{\shortstack{Irmin}}};
+   \end{scope}
+   \draw[->,thick] (n0) -- (n1);
+   \draw[->,thick] (n0) -- (n2);
+   \draw[->,thick,red] (n0) -- (n3);
+   \draw[->,thick] (n0) -- (n4);
+   \draw[->,thick] (n0) -- (n5);
+   \draw[->,thick] (n0) -- (n6);
+   \draw[->,thick] (n0) -- (n7);
+   \draw[->,thick] (n0) -- (n8);
+   \draw[->,thick] (n3) -- (n9);
+   \draw[->,thick,red] (n3) -- (n10);
+   \draw[->,thick] (n3) -- (n11);
+   \draw[->,thick,red] (n10) -- (n12);
+   \draw[->,thick,red] (n12) -- (n13);
+  \end{tikzpicture}
+ \end{figure}
+
+\end{frame}
+
 \section{Introduction}
 \subsection{Problem presentation}
 \begin{frame}
@@ -146,7 +204,7 @@ decorate, decoration={
   \path[thin] (a8) edge (a6);
   \end{tikzpicture}
   }
-  \caption{Main Graph} \label{fig:22a}
+  \caption{Merged Graph} \label{fig:22a}
   \end{subfigure}%
  \begin{subfigure}[b]{0.3\textwidth}
   \centering
@@ -225,6 +283,198 @@ decorate, decoration={
 \end{subfigure}
 \end{figure}
 \end{frame}
+\subsection{Vector Clock}
+\begin{frame}
+\frametitle{Vector Clock}
+ \begin{figure}[H]
+\centering
+ \scalebox{0.7}{
+ \begin{tikzpicture}
+  \begin{scope}[start chain=2 going below,node distance= 0.75cm]
+    \node [on chain=2,arn_bb,draw = none] {$P_0$};
+    \node [on chain=2,arn_nb] (p00) {C};
+    \node [on chain = 2,arn_nb] (p01) {$M(1)$};
+    \node [on chain = 2,arn_nb] (p02) {C};
+    \node [on chain = 2,arn_nb] (p03) {$M(2)$};
+    \node [on chain=2,arn_nb] (p04) {C};
+    \node [on chain=2,arn_bb,draw = none] (p05) {};
+\end{scope}
+
+\begin{scope}[shift={(1.5cm,0cm)},start chain=2 going below,node distance= 0.75cm]
+\node [on chain=2,arn_bb,draw = none] {$P_1$};
+    \node [on chain=2,arn_nb] (p10) {C};
+    \node [on chain = 2,arn_nb] (p11) {C};
+    \node [on chain = 2,arn_nb] (p12) {C};
+    \node [on chain = 2,arn_nb] (p13) {C};
+    \node [on chain=2,arn_nb] (p14) {$M(2)$};
+    \node [on chain=2,arn_bb,draw = none] (p15) {};
+\end{scope}
+
+\begin{scope}[shift={(3cm,0cm)},start chain=2 going below,node distance= 0.75cm]
+\node [on chain=2,arn_bb,draw = none] {$P_2$};
+    \node [on chain=2,arn_nb] (p20) {C};
+    \node [on chain = 2,arn_nb] (p21) {$M(0)$};
+    \node [on chain = 2,arn_nb] (p22) {C};
+    \node [on chain = 2,arn_nb] (p23) {C};
+    \node [on chain=2,arn_nb] (p24) {$M(0)$};
+    \node [on chain=2,arn_bb,draw = none] (p25) {};
+\end{scope}
+\draw[->,black,very thick] (p00.south) to (p01.north);
+\draw[->,black,very thick] (p01.south) to (p02.north);
+\draw[->,black,very thick] (p02.south) to (p03.north);
+\draw[->,black,very thick] (p03.south) to (p04.north);
+\draw[->,black,very thick] (p04.south) to (p05.north);
+
+
+\draw[->,black,very thick] (p10.south) to (p11.north);
+\draw[->,black,very thick] (p11.south) to (p12.north);
+\draw[->,black,very thick] (p12.south) to (p13.north);
+\draw[->,black,very thick] (p13.south) to (p14.north);
+\draw[->,black,very thick] (p14.south) to (p15.north);
+
+\draw[->,black,very thick] (p20.south) to (p21.north);
+\draw[->,black,very thick] (p21.south) to (p22.north);
+\draw[->,black,very thick] (p22.south) to (p23.north);
+\draw[->,black,very thick] (p23.south) to (p24.north);
+\draw[->,black,very thick] (p24.south) to (p25.north);
+
+\draw[zigzag] (p10) to (p01);
+\draw[zigzag] (p22) to (p03);
+\draw[zigzag] (p23) to (p14);
+\draw[zigzag] (p00) to (p21);
+\draw[zigzag] (p03) to (p24);
+ \end{tikzpicture}
+ }
+ \caption{Three processes sharing information} \label{fig:21}
+\end{figure}
+\end{frame}
+\begin{frame}
+\begin{figure}[H]
+\centering
+\scalebox{0.7}{
+ \begin{tikzpicture}
+  \begin{scope}[start chain=2 going below,node distance= 0.75cm]
+    \node [on chain=2,arn_bb,draw = none] {$P_0$};
+    \node [on chain=2,arn_rb] (p00) {C};
+    \node [on chain = 2,arn_nb] (p01) {$M(1)$};
+    \node [on chain = 2,arn_rb] (p02) {C};
+    \node [on chain = 2,arn_nb] (p03) {$M(2)$};
+    \node [on chain=2,arn_nb] (p04) {C};
+    \node [on chain=2,arn_bb,draw = none] (p05) {};
+\end{scope}
+
+\begin{scope}[shift={(1.5cm,0cm)},start chain=2 going below,node distance= 0.75cm]
+\node [on chain=2,arn_bb,draw = none] {$P_1$};
+    \node [on chain=2,arn_nb] (p10) {C};
+    \node [on chain = 2,arn_nb] (p11) {C};
+    \node [on chain = 2,arn_nb] (p12) {C};
+    \node [on chain = 2,arn_nb] (p13) {C};
+    \node [on chain=2,arn_nb] (p14) {$M(2)$};
+    \node [on chain=2,arn_bb,draw = none] (p15) {};
+\end{scope}
+
+\begin{scope}[shift={(3cm,0cm)},start chain=2 going below,node distance= 0.75cm]
+\node [on chain=2,arn_bb,draw = none] {$P_2$};
+    \node [on chain=2,arn_nb] (p20) {C};
+    \node [on chain = 2,arn_nb] (p21) {$M(0)$};
+    \node [on chain = 2,arn_rb] (p22) {C};
+    \node [on chain = 2,arn_nb] (p23) {C};
+    \node [on chain=2,arn_nb] (p24) {$M(0)$};
+    \node [on chain=2,arn_bb,draw = none] (p25) {};
+\end{scope}
+\draw[->,red,very thick] (p00.south) to (p01.north);
+\draw[->,red,very thick] (p01.south) to (p02.north);
+\draw[->,black,very thick] (p02.south) to (p03.north);
+\draw[->,black,very thick] (p03.south) to (p04.north);
+\draw[->,black,very thick] (p04.south) to (p05.north);
+
+
+\draw[->,black,very thick] (p10.south) to (p11.north);
+\draw[->,black,very thick] (p11.south) to (p12.north);
+\draw[->,black,very thick] (p12.south) to (p13.north);
+\draw[->,black,very thick] (p13.south) to (p14.north);
+\draw[->,black,very thick] (p14.south) to (p15.north);
+
+\draw[->,black,very thick] (p20.south) to (p21.north);
+\draw[->,red,very thick] (p21.south) to (p22.north);
+\draw[->,black,very thick] (p22.south) to (p23.north);
+\draw[->,black,very thick] (p23.south) to (p24.north);
+\draw[->,black,very thick] (p24.south) to (p25.north);
+
+\draw[zigzag] (p10) to (p01);
+\draw[zigzag] (p22) to (p03);
+\draw[zigzag] (p23) to (p14);
+\draw[zigzagred] (p00) to (p21);
+\draw[zigzag] (p03) to (p24);
+ \end{tikzpicture}
+ }
+ \caption{Biggest common ancestor between two nodes}  \label{fig:22}
+\end{figure}
+\end{frame}
+\begin{frame}
+\begin{figure}[H]
+\centering
+\scalebox{0.7}{
+ \begin{tikzpicture}
+  \begin{scope}[start chain=2 going below,node distance= 0.75cm]
+    \node [on chain=2,arn_bb,draw = none] {$P_0$};
+    \node [on chain=2,arn_nb] (p00) {$1,0,0$};
+    \node [on chain = 2,arn_nb] (p01) {$2,1,0$};
+    \node [on chain = 2,arn_nb] (p02) {$3,1,0$};
+    \node [on chain = 2,arn_nb] (p03) {$4,1,3$};
+    \node [on chain=2,arn_nb] (p04) {$5,1,3$};
+    \node [on chain=2,arn_bb,draw = none] (p05) {};
+\end{scope}
+
+\begin{scope}[shift={(1.5cm,0cm)},start chain=2 going below,node distance= 0.75cm]
+\node [on chain=2,arn_bb,draw = none] {$P_1$};
+    \node [on chain=2,arn_nb] (p10) {$0,1,0$};
+    \node [on chain = 2,arn_nb] (p11) {$0,2,0$};
+    \node [on chain = 2,arn_nb] (p12) {$0,3,0$};
+    \node [on chain = 2,arn_nb] (p13) {$0,4,0$};
+    \node [on chain=2,arn_nb] (p14) {$1,5,4$};
+    \node [on chain=2,arn_bb,draw = none] (p15) {};
+\end{scope}
+
+\begin{scope}[shift={(3cm,0cm)},start chain=2 going below,node distance= 0.75cm]
+\node [on chain=2,arn_bb,draw = none] {$P_2$};
+    \node [on chain=2,arn_nb] (p20) {$0,0,1$};
+    \node [on chain = 2,arn_nb] (p21) {$1,0,2$};
+    \node [on chain = 2,arn_nb] (p22) {$1,0,3$};
+    \node [on chain = 2,arn_nb] (p23) {$1,0,4$};
+    \node [on chain=2,arn_nb] (p24) {$4,1,5$};
+    \node [on chain=2,arn_bb,draw = none] (p25) {};
+\end{scope}
+\draw[->,black,very thick] (p00.south) to (p01.north);
+\draw[->,black,very thick] (p01.south) to (p02.north);
+\draw[->,black,very thick] (p02.south) to (p03.north);
+\draw[->,black,very thick] (p03.south) to (p04.north);
+\draw[->,black,very thick] (p04.south) to (p05.north);
+
+
+\draw[->,black,very thick] (p10.south) to (p11.north);
+\draw[->,black,very thick] (p11.south) to (p12.north);
+\draw[->,black,very thick] (p12.south) to (p13.north);
+\draw[->,black,very thick] (p13.south) to (p14.north);
+\draw[->,black,very thick] (p14.south) to (p15.north);
+
+\draw[->,black,very thick] (p20.south) to (p21.north);
+\draw[->,black,very thick] (p21.south) to (p22.north);
+\draw[->,black,very thick] (p22.south) to (p23.north);
+\draw[->,black,very thick] (p23.south) to (p24.north);
+\draw[->,black,very thick] (p24.south) to (p25.north);
+
+\draw[zigzag] (p10) to (p01);
+\draw[zigzag] (p22) to (p03);
+\draw[zigzag] (p23) to (p14);
+\draw[zigzag] (p00) to (p21);
+\draw[zigzag] (p03) to (p24);
+ \end{tikzpicture}
+ }
+ \caption{Labeling Nodes with partial order}  \label{fig:23}
+\end{figure}
+\end{frame}
+
 
 
 \subsection{Hypothesis}
@@ -1151,6 +1401,23 @@ decorate, decoration={
   \caption{Graph of 1000 nodes with Slices of size 200}
  \end{figure}
 \end{frame}
+\begin{frame}
+ \begin{figure}[H]
+ \centering
+  \includegraphics[height=6cm]{./image/eval/call_depending_on_high_over_size.png}
+  \caption{Number of operations depending on the height of the DAG}
+  \label{fig:3.6}
+ \end{figure}
+ \end{frame}
+ \begin{frame}
+ \begin{figure}[H]
+ \centering
+  \includegraphics[height=6cm]{./image/eval/call_depending_on_f_coef.png}
+  \caption{Number of operations depending on average number of predecessors}
+ \label{fig:3.7}
+ \end{figure}
+\end{frame}
+
 
 \section{Conclusion}
 \begin{frame}
@@ -1162,8 +1429,8 @@ decorate, decoration={
    \item The server is memory free regarding a particular client.
   \end{itemize}
   \end{exampleblock}
-
 \end{frame}
+
 
 
 \end{document}

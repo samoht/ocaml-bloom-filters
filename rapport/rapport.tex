@@ -14,6 +14,7 @@
 \usepackage{amssymb}
 \usepackage{subcaption}
 \usepackage{mathrsfs}
+\bibliographystyle{plain}
 \usepackage[usenames,dvipsnames]{color}
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \providecommand{\SetAlgoLined}{\SetLine}
@@ -95,6 +96,7 @@ decorate, decoration={
     }% arbre rouge noir, noeud rouge}
 \input{caml.tex}
 \begin{document}
+% \input{fichesynth.tex}
 \maketitle
 % \begin{abstract}
 % Irmin is a database designed to run in distributed, decentralised settings. Irmin gives the user the same primitive as distributed version control systems. This report details the design of a merge algorithm which enables an unknown number of processes doing commits to synchronize their history. The detailed algorithm produces a small (compared to the size of the history) exchange of information between a client and a server, the algorithm enables the server to be memory free regarding a particular client.
@@ -126,18 +128,27 @@ decorate, decoration={
 \input{hash.tex}
 \section{Evaluation}
 \input{eval.tex}
-\chapter{Conclusion and bibliography}
+\chapter{Conclusion}
+\input{concl.tex}
 %   \input{biblio.tex}
+% \cite{*}
+\bibliography{biblio}
 \chapter{Appendix}
 \section{DAG Generator}
 \label{sec:daggen}
 \input{daggen.tex}
-\section{Detailed Algorithm}
-\label{sec:detailedalgo}
+\section{Probability of false positive}
+\label{sec:proof}
+\input{proof.tex}
+\section{Example of application of the algorithm}
+\label{sec:exapp}
+\input{exampleapp.tex}%
+\section{Detailed Algorithm}%
+\label{sec:detailedalgo}%
 \input{detailedalgo.tex}
-\section{Signatures}
-\label{sec:datasig}
-\input{datasig.tex}
+% \section{Signatures}
+% \label{sec:datasig}
+% \input{datasig.tex}
 %   \input{algo.tex}
 \end{document}
 % p3.  Research Subject

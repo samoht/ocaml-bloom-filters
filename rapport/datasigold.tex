@@ -1,0 +1,17 @@
+\begin{lstlisting}
+module type DataSig =
+  sig
+  (** type t is the type of the data we are trying to store *)
+  type t
+  (** type u is the type of the storage that are used *)
+  type u
+  val nb_max : int
+  (** [merge lu lt] is a function that computes the union of storages
+      and add some new data where [lu] is the storages we want to unite
+      and [lt] the data we want to add *)
+  val merge : u list -> t list -> u
+  (** [mem e s] tests the membership where [e] is the data and [s] is
+      the storage *)
+  val mem : t -> u -> bool
+end
+\end{lstlisting}

@@ -188,8 +188,8 @@ We assume that we have a collection of processes $P_0,\cdots,P_{n-1}$ that can c
 \caption{A known number of processes sharing information over time}
 \end{figure}
 
-\paragraph{} Figures~\ref{fig:21} shows an example with three processes doing commits (C) and Merging with other process ($M(i)$). 
-% This figure shows an underlying partial order between elements as defined by Leslie Lamport (TODO : put reference). 
+\paragraph{} Figures~\ref{fig:21} shows an example with three processes commiting (C) and Merging with other process ($M(i)$). 
+This figure shows an underlying partial order between elements as defined by Leslie Lamport (see \cite{DBLP:journals/cacm/Lamport78}). 
 \begin{definition} We define the relation $<$ as the smallest relation on the nodes following the conditions :
  \begin{enumerate}
   \item If $a$ and $b$ are two nodes of the same process $P_i$ and $a \prec_i b$ then $a < b$
@@ -206,15 +206,16 @@ c < b
 \forall d\ ,
 c < d \Rightarrow \left ( d \nless a \vee d \nless b \right )
 \right )
-\}$ see Figure~\ref{fig:22}. This set can be of any size, however Figure~\ref{fig:31} underlines what having two biggest common ancestors mean in term of merging. 
-\paragraph{} Finding the biggest common ancestor(s) of $a$ and $b$ is an important problem when they want to merge, indeed all of the ancestors of the BCA are ancestors of the $a$ and $b$ whereas all of their successors are not in the history of either $a$ or $b$. Therefore it is interesting to find a way to discover quickly and without exchanging too many informations between two processes what are the biggest common ancestors of two nodes. For this purpose it is a common practive to use vector clock label each of the states with a vector of integers of size $n$, $n$ being the total number of processes exchanging information. $\delta_i$ denotes the vector having zeros everywhere except a 1 at the $i$-th position. We build the label of the states in the "$<$" order:
+\}$ see Figure~\ref{fig:22}. This set can be of any size, however Figure~\ref{fig:31} underlines what having two biggest common ancestors means in term of merging. 
+\paragraph{} As explained in the introduction, our aim is to synchronise DAGs in an asymetric way, meaning that a client pulls information from a server. Considering that the history of the server is a graph $G$ and the history of the client is a graph $G'$, we want to compute the difference $G\setminus G'$ so that the client is able to add the history of the server to its history. If we consider the complete graph $G\cup G'$ and compute in this graph the set of Biggest Common Ancestors of the two most "recent" nodes in $G$ and $G'$ we are able to compute the difference $G\setminus G'$ by taking all the descendants of the BCA that belong to $G$. Therefore it is interesting to find a way to discover quickly and without exchanging too much informations between two processes what are the biggest common ancestors of two nodes. For this purpose it is a common practice to use vector clock (see \cite{fidge1988timestamps} and \cite{VirtTimeGlobStates}), we label each of the states with a vector of integers of size 
+$n$, $n$ being the total number of processes exchanging information. $\delta_i$ denotes the vector having zeros everywhere except a 1 at the $i$-th position. We build the label of the states in the "$<$" order:
 \begin{enumerate}
- \item If a state $a$ is a commit state on a process $P_i$ and as no predecessor for the $\prec_i$ relation then $a$ is labeled with $\delta_i$
+ \item If a state $a$ is a commit state on a process $P_i$ and has no predecessor for the $\prec_i$ relation then $a$ is labeled with $\delta_i$
  \item If a state $a$ is a commit state on a process $P_i$ and it has a biggest predecessor $b$ then $a$ is labeled with $\mathrm{label}(b) + \delta_i$
  \item If a state $a$ is a merge state with a state $b$ and $a$ as no predecessor for the $\prec_i$ relation then $a$ is labeled with $\mathrm{label}(b) + \delta_i$
  \item If a state $a$ is a merge state with a state $b$ and it has a biggest predecessor $c$ then $a$ is labeled with $\mathrm{max}(\mathrm{label}(b),\mathrm{label}(c)) + \delta_i$. Where $\max$ is the max on each components of the vector
 \end{enumerate}
-Such a labeling can be seen on Figure~\ref{fig:23}. We define the $\preccurlyeq$ relation on integer vector of size $n$ by : $u \preccurlyeq v \Leftrightarrow \forall i \in \{0,\cdots,n-1\}\  u(i) \leq v(i)$ and $\prec$ defined by $u \prec v \Leftrightarrow u \preccurlyeq v \wedge u \neq v$. As shown in (TODO) We have the following invariants regarding the labels of the states :
+Such a labeling can be seen on Figure~\ref{fig:23}. We define the $\preccurlyeq$ relation on integer vector of size $n$ by : $u \preccurlyeq v \Leftrightarrow \forall i \in \{0,\cdots,n-1\}\  u(i) \leq v(i)$ and $\prec$ defined by $u \prec v \Leftrightarrow u \preccurlyeq v \wedge u \neq v$. As shown in \cite{t1} and \cite{t2} we have the following invariants regarding the labels of the states :
 \begin{proposition}
   \label{prop1}
  $ a < b \Leftrightarrow \mathrm{label}(a) \prec  \mathrm{label}(b)$
@@ -225,13 +226,13 @@ Such a labeling can be seen on Figure~\ref{fig:23}. We define the $\preccurlyeq$
 \end{proposition}
 
 These two propositions allow processes to find their common ancestor just by computing the min with the label received. Once the biggest common ancestor is found, the difference of history between the two nodes can easily be computed and shared so that one node know the history of the other.
-\paragraph{} In all of the previous remarks we considered the total number of processes known in advance, however in many cases it is not the case, for example in Git one does not know how many contributors will be part of a project at the end. Vector clocks are nice and easy to use : they can be built incrementally when merging or commiting, a minimum computation gives the BCA when there is only one, however there is no bound on the indexes in the vector which size must be set at the beginning. In section~\ref{sec:prelim} we tried to adapt the work on Vector Clocks to our problem. Therefore we are working under the assumptions that : 
+\paragraph{} In all of the previous remarks we considered the total number of processes known in advance, however in many cases it is not true, for example in Git one does not know how many contributors will be part of a project at the end. Vector clocks are nice and easy to use : they can be built incrementally when merging or commiting, a minimum computation gives the BCA when there is only one, however there is no bound on the indexes in the vector which size must be set at the beginning. In section~\ref{sec:prelim} we tried to adapt the work on Vector Clocks to our problem. Therefore we are working on some more generic assumptions : 
 \begin{itemize}
- \item \textbf{we have DAGs, with the only constraint that each node has a hashable identifier different from every other nodes.}
+%  \item \textbf{we have DAGs, with the only constraint that each node has a hashable identifier different from every other nodes.}
  \item \textbf{two nodes can have more than one biggest common ancestor}
- \item \textbf{there can be any number of processes involved}
+ \item \textbf{there can be any (possibly large) number of processes involved}
 \end{itemize}
-The graphs we are working on are immutable in the sense that the past does not change, we only add elements on the top, and computing $\texttt{pred}(x)$ is cheap. We will pay a particular attention toward optimizing the cases where the difference between the two DAGs is small.
+The graphs we are working on are persistent in the sense that the past does not change, we only add elements on the top, and computing $\texttt{pred}(x)$ is cheap. We will pay a particular attention towards optimizing the cases where the difference between the two DAGs we want to synchronise is small.
 The figure~\ref{fig:22a} gives an example of DAGs we will be considering, and of the history of two processes Alice (Figure~\ref{fig:22b}) and 
 Bob (Figure~\ref{fig:22c}) that have some history in common.
 
@@ -267,7 +268,7 @@ Bob (Figure~\ref{fig:22c}) that have some history in common.
   \path[thin] (a7) edge (a6);
   \path[thin] (a8) edge (a6);
   \end{tikzpicture}
-  \caption{Main Graph} \label{fig:22a}
+  \caption{Synchronised Graph} \label{fig:22a}
   \end{subfigure}%
  \begin{subfigure}[b]{0.3\textwidth}
   \centering

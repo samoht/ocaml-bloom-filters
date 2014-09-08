@@ -1,4 +1,4 @@
-A Bloom filter (BF) is a space-efficient probabilistic data structure that was conceived in 1970 by Burton Howard Bloom (ref TODO). This data structure is particularly efficient for adding an element or testing wether an element is in a set or not. This efficiency is at the cost of having some false positive but no false negative in the membership test. Here we will present the Bloom filters as they were used during my internship, however a lot of different variations have been used on Bloom filters (TODO Mettre ref). Let us consider a set $S$, a subset $S' = \{x_0,\cdots,x_{n-1}\} \subset S$, we assume moreover that we have $k$ hash functions $\mathcal{H}=\{h_0,\cdots,h_{k-1}\}$ from $S$ to $\{0,\cdots,m-1\}$ and a matrix $T$ of size $k \times m$ bits initially to zero. The BF of $S'$ is :
+The previous remarks underline the idea of using arrays labeling the nodes of the DAGs, which is the reason why we tried to use Bloom filter to elaborate our algorithm. A Bloom filter (BF) is a space-efficient probabilistic data structure that was conceived in 1970 by Burton Howard Bloom (see \cite{Bloom:1970:STH:362686.362692}). This data structure is particularly efficient for adding an element or testing wether an element is in a set or not. This efficiency is at the cost of having some false positive but no false negative in the membership test. Here we will present the Bloom filters as they were used during my internship, however a lot of different variations have been used on Bloom filters (see \cite{DBLP:journals/cn/DonnetBF10} or \cite{DBLP:conf/allerton/GoodrichM11}). Let us consider a set $S$, a subset $S' = \{x_0,\cdots,x_{n-1}\} \subset S$, we assume moreover that we have $k$ hash functions $\mathcal{H}=\{h_0,\cdots,h_{k-1}\}$ from $S$ to $\{0,\cdots,m-1\}$ and a matrix $T$ of size $k \times m$ bits initially to zero. The BF of $S'$ is :
 \begin{equation*}
 T(i)(j) = \left \{ 
 \begin{tabular}{c l} 
@@ -133,15 +133,6 @@ false positive, as shown on Figure~\ref{fig:fp}.
   \mathbb{P}=\left ( 1 - \left ( 1 - \frac{1}{m} \right )^n \right )^k
  \]
 \end{proposition}
-\begin{proof}(TODO ref)
-With the same notation than in the proposition :
- \begin{align*}
-  \mathbb{P} &= \mathbb{P}(\forall j \in \{0,\cdots,k-1\}, T(j)(h_j(x)) = 1)\\
-    &= \left ( \mathbb{P}(T(0)(h_0(x)) = 1) \right )^k\\
-    &= \left ( \sum_{i=0}^{m-1} \mathbb{P}(T(0)(i) = 1)\mathbb{P}(h_0(x) = i)\right )^k\\
-    &= \left ( \sum_{i=0}^{m-1} \mathbb{P}(T(0)(0) = 1)\frac{1}{m}\right )^k\\
-    &= \left ( 1- \mathbb{P}(T(0)(0) = 0)\right )^k\\
-    &= \left ( 1- \mathbb{P}(\forall p \in \{0,\cdots,n-1\} h_0(p) \neq 0 )\right )^k\\
-    &= \left ( 1- \left ( \frac{m-1}{m} \right )^n \right )^k\\
- \end{align*}
+\begin{proof}
+see section~\ref{sec:proof}
 \end{proof}

@@ -1,0 +1,12 @@
+\begin{proof}
+With the same notation than in the proposition :
+ \begin{align*}
+  \mathbb{P} &= \mathbb{P}(\forall j \in \{0,\cdots,k-1\}, T(j)(h_j(x)) = 1)\\
+    &= \left ( \mathbb{P}(T(0)(h_0(x)) = 1) \right )^k\\
+    &= \left ( \sum_{i=0}^{m-1} \mathbb{P}(T(0)(i) = 1)\mathbb{P}(h_0(x) = i)\right )^k\\
+    &= \left ( \sum_{i=0}^{m-1} \mathbb{P}(T(0)(0) = 1)\frac{1}{m}\right )^k\\
+    &= \left ( 1- \mathbb{P}(T(0)(0) = 0)\right )^k\\
+    &= \left ( 1- \mathbb{P}(\forall p \in \{0,\cdots,n-1\} h_0(p) \neq 0 )\right )^k\\
+    &= \left ( 1- \left ( \frac{m-1}{m} \right )^n \right )^k\\
+ \end{align*}
+ \end{proof}

@@ -1,0 +1,82 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{fontenc}
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{fullpage}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{float}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{mathrsfs}
+\providecommand{\SetAlgoLined}{\SetLine}
+\providecommand{\DontPrintSemicolon}{\dontprintsemicolon}
+\title{Rapport de Mi-parcours de Stage de M1}
+\author{Matthieu JOURNAULT}
+\date{11/07/2014}
+\theoremstyle{definition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\theoremstyle{definition}
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usetikzlibrary{chains,fit,shapes}
+\usepackage{fullpage}
+\definecolor{turquoise}{RGB}{255,127,0}
+\tikzset{
+  treenode/.style = {align=center, inner sep=0pt, text centered,
+    font=\sffamily},
+  arn_ns/.style = {treenode, rectangle, white, font=\sffamily\bfseries, draw=black,
+    fill=black, minimum width=1.5em, minimum height=1.5em, very thick},% arbre rouge noir, noeud noir
+  arn_n/.style = {treenode, circle , white, font=\sffamily\bfseries, draw=black,
+    fill=black, text width=1.5em},% arbre rouge noir, noeud noir
+  arn_r/.style = {treenode, circle , red, draw=red, 
+    text width=1.5em, very thick},% arbre rouge noir, noeud rouge
+  arn_x/.style = {treenode, rectangle, draw=black,
+    minimum width=1em, minimum height=1em},% arbre rouge noir, nil
+  arn_b/.style = {treenode, circle , blue, draw=blue, 
+    text width=1.5em, very thick},
+  arn_g/.style = {treenode, circle , green, draw=green, 
+    text width=1.5em, very thick},
+  arn_y/.style = {treenode, circle , yellow, draw=yellow, 
+    text width=1.5em, very thick},
+    arn_pu/.style = {treenode, circle , purple, draw=purple, 
+    text width=1.5em, very thick},
+    arn_pi/.style = {treenode, circle , pink, draw=pink, 
+    text width=1.5em, very thick},
+    arn_t/.style = {treenode, circle , pink, draw=turquoise, 
+    text width=1.5em, very thick},
+    arn_rb/.style = {treenode, circle , red, draw=red, 
+    text width=2.5em, very thick},
+    arn_bs/.style = {treenode, rectangle , blue, draw=blue, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    arn_rs/.style = {treenode, rectangle, red, draw=red, 
+    minimum width=1.5em, minimum height=1.5em, very thick},% arbre rouge noir, noeud rouge
+  arn_gs/.style = {treenode, rectangle , green, draw=green, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+  arn_ys/.style = {treenode, rectangle , yellow, draw=yellow, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    arn_pus/.style = {treenode, rectangle , purple, draw=purple, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    arn_pis/.style = {treenode, rectangle , pink, draw=pink, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    arn_rbs/.style = {treenode, rectangle , red, draw=red, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    arn_ts/.style = {treenode, rectangle, pink, draw=turquoise, 
+    minimum width=1.5em, minimum height=1.5em, very thick},
+    }% arbre rouge noir, noeud rouge}
+\input{caml.tex}
+\begin{document}
+\maketitle
+\paragraph{Titre du stage :} Using Bloom filters to merge git trees
+\paragraph{Encadrant principal :} Thomas Gazagnaire (\href{http://thomas.gazagnaire.org/}{webpage})
+\paragraph{Equipe de travail :} Ocaml Labs de l'université de Cambridge (\href{http://www.cl.cam.ac.uk/projects/ocamllabs/}{webpage})
+\paragraph{Etat d'avancement :} Le stage a commencé au début du mois de juin et dure jusqu'au début du mois d'août. Pendant le premier mois du stage, il m'était demandé de réfléchir sur un algorithme pour calculer de manière efficace (aussi bien en terme d'espace, que de temps de calcul et de quantité d'information échangée entre les deux protagonistes) la différence entre l'histoire de deux processus ayant un passé commun. Cet algorithme a abouti à la mise en place d'une librairie en ocaml (\url{https://github.com/samoht/ocaml-bloom-filters})
+\paragraph{Projet pour le mois restant :} Rédaction en vu du rapport de stage, d'une éventuelle publication et un participation au blog de l'équipe afin de présenter le travail effectué. Il reste du travail à faire sur le code, notamment de l'optimisation ainsi que des cas particuliers qui doivent être traités à part.
+\end{document}
